@@ -11,9 +11,12 @@ app.use(express.json());
 
 const userRoutes = require('./routes/userRoutes');
 const loteRoutes = require('./routes/loteRoutes');
+const ubicacionRoutes = require('./routes/ubicacionRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/lotes', loteRoutes);
+app.use('/api', ubicacionRoutes);
+
 
 // Ruta raíz
 app.get('/', (req, res) => {

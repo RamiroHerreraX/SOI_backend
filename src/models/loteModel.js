@@ -31,12 +31,12 @@ const Lote = {
   validate: (data) => loteSchema.validate(data),
 
   getAll: async () => {
-    const res = await pool.query('SELECT * FROM "Lote" ORDER BY id_propiedad');
+    const res = await pool.query('SELECT * FROM lote ORDER BY id_propiedad');
     return res.rows;
   },
 
   getById: async (id) => {
-    const res = await pool.query('SELECT * FROM "Lote" WHERE id_propiedad=$1', [id]);
+    const res = await pool.query('SELECT * FROM lote WHERE id_propiedad=$1', [id]);
     return res.rows[0];
   },
 
@@ -53,7 +53,7 @@ const Lote = {
     ];
 
     const res = await pool.query(
-      `INSERT INTO "Lote" (
+      `INSERT INTO lote (
         tipo, numLote, manzana, direccion, colonia, ciudad, estado, codigo_postal,
         superficie_m2, precio, valor_avaluo, num_habitaciones, num_banos,
         num_estacionamientos, servicios, descripcion, topografia, documentacion,
@@ -80,7 +80,7 @@ const Lote = {
     if(fields.length === 0) throw new Error("No hay datos para actualizar");
 
     const res = await pool.query(
-      `UPDATE "Lote" SET ${fields.join(', ')} WHERE id_propiedad=$${i} RETURNING *`,
+      `UPDATE lote SET ${fields.join(', ')} WHERE id_propiedad=$${i} RETURNING *`,
       [...values, id]
     );
     return res.rows[0];
@@ -88,7 +88,7 @@ const Lote = {
 
   delete: async (id) => {
     const res = await pool.query(
-      'DELETE FROM "Lote" WHERE id_propiedad=$1 RETURNING *',
+      'DELETE FROM lote WHERE id_propiedad=$1 RETURNING *',
       [id]
     );
     return res.rows[0];
