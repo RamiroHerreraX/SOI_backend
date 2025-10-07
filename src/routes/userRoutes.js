@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-// Obtener todos los usuarios
-router.get('/', userController.getAllUsers);
+// Obtener todos los usuarios o filtrados por rol
+router.get('/', userController.getUsersByRole);
 
 // Obtener un usuario por ID
 router.get('/:id', userController.getUserById);

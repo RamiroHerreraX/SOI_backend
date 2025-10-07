@@ -16,12 +16,24 @@ const User = {
   validate: (data) => userSchema.validate(data),
 
   getAll: async () => {
-    const res = await pool.query('SELECT id_user, usuario, rol, correo, telefono FROM "User" ORDER BY id_user');
+    const res = await pool.query('SELECT id_user, usuario, rol, correo, telefono FROM users ORDER BY id_user');
     return res.rows;
   },
 
+  getByRole: async (rol) => {
+  const res = await pool.query(
+    `SELECT id_user, usuario, rol, correo, telefono 
+     FROM users
+     WHERE rol = $1 
+     ORDER BY id_user`,
+    [rol]
+  );
+  return res.rows;
+},
+
+
   getById: async (id) => {
-    const res = await pool.query('SELECT id_user, usuario, rol, correo, telefono FROM "User" WHERE id_user=$1', [id]);
+    const res = await pool.query('SELECT id_user, usuario, rol, correo, telefono FROM users WHERE id_user=$1', [id]);
     return res.rows[0];
   },
 

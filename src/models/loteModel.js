@@ -41,17 +41,48 @@ const Lote = {
   },
 
   create: async (data) => {
+  // Validamos solo los campos que vienen del cliente
   const { error } = loteSchema.validate(data);
   if (error) throw new Error(error.details[0].message);
 
+  // Convertir nombres en IDs
+  let id_estado = null, id_ciudad = null, id_colonia = null;
+
+  if(data.estado){
+    const estadoRow = await pool.query(
+      'SELECT id_estado FROM estado WHERE nombre_estado=$1', [data.estado]
+    );
+    if(estadoRow.rowCount === 0) throw new Error('Estado no encontrado');
+    id_estado = estadoRow.rows[0].id_estado;
+  }
+
+  if(data.ciudad){
+    const ciudadRow = await pool.query(
+      'SELECT id_ciudad FROM ciudad WHERE nombre_ciudad=$1 AND id_estado=$2',
+      [data.ciudad, id_estado]
+    );
+    if(ciudadRow.rowCount === 0) throw new Error('Ciudad no encontrada');
+    id_ciudad = ciudadRow.rows[0].id_ciudad;
+  }
+
+  if(data.colonia){
+    const coloniaRow = await pool.query(
+      'SELECT id_colonia FROM colonia WHERE nombre_colonia=$1 AND id_ciudad=$2',
+      [data.colonia, id_ciudad]
+    );
+    if(coloniaRow.rowCount === 0) throw new Error('Colonia no encontrada');
+    id_colonia = coloniaRow.rows[0].id_colonia;
+  }
+
+  // --- Ahora sí armamos el INSERT solo con los IDs internos ---
   const values = [
     data.tipo,
     data.numLote,
     data.manzana,
     data.direccion,
-    data.id_colonia,
-    data.id_ciudad,
-    data.id_estado,
+    id_colonia,
+    id_ciudad,
+    id_estado,
     data.superficie_m2,
     data.precio,
     data.valor_avaluo,
@@ -89,7 +120,6 @@ const Lote = {
 
   return res.rows[0];
 },
-
 
   update: async (id, data) => {
     const { error } = loteSchema.validate(data, { presence: 'optional' });

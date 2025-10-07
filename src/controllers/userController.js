@@ -4,8 +4,19 @@ const asyncHandler = fn => (req, res, next) => {
   Promise.resolve(fn(req,res,next)).catch(next);
 };
 
-exports.getAllUsers = asyncHandler(async (req,res)=>{
-  const users = await User.getAll();
+exports.getUsersByRole = asyncHandler(async (req, res) => {
+  const { rol } = req.query;
+
+  let users;
+  if (rol) {
+    // Si se pasa un rol (?rol=encargado)
+    const result = await User.getByRole(rol);
+    users = result;
+  } else {
+    // Si no se pasa rol, traer todos
+    users = await User.getAll();
+  }
+
   res.json(users);
 });
 
@@ -32,3 +43,4 @@ exports.deleteUser = asyncHandler(async (req,res)=>{
   const user = await User.delete(req.params.id);
   res.json(user);
 });
+
