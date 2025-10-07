@@ -41,31 +41,55 @@ const Lote = {
   },
 
   create: async (data) => {
-    const { error } = loteSchema.validate(data);
-    if(error) throw new Error(error.details[0].message);
+  const { error } = loteSchema.validate(data);
+  if (error) throw new Error(error.details[0].message);
 
-    const values = [
-      data.tipo, data.numLote, data.manzana, data.direccion, data.colonia, data.ciudad,
-      data.estado, data.codigo_postal, data.superficie_m2, data.precio, data.valor_avaluo,
-      data.num_habitaciones, data.num_banos, data.num_estacionamientos, data.servicios,
-      data.descripcion, data.topografia, data.documentacion, data.estado_propiedad,
-      data.fecha_disponibilidad, data.imagen, data.id_user
-    ];
+  const values = [
+    data.tipo,
+    data.numLote,
+    data.manzana,
+    data.direccion,
+    data.id_colonia,
+    data.id_ciudad,
+    data.id_estado,
+    data.superficie_m2,
+    data.precio,
+    data.valor_avaluo,
+    data.num_habitaciones,
+    data.num_banos,
+    data.num_estacionamientos,
+    data.servicios,
+    data.descripcion,
+    data.topografia,
+    data.documentacion,
+    data.estado_propiedad,
+    data.fecha_disponibilidad,
+    data.imagen,
+    data.id_user
+  ];
 
-    const res = await pool.query(
-      `INSERT INTO lote (
-        tipo, numLote, manzana, direccion, colonia, ciudad, estado, codigo_postal,
-        superficie_m2, precio, valor_avaluo, num_habitaciones, num_banos,
-        num_estacionamientos, servicios, descripcion, topografia, documentacion,
-        estado_propiedad, fecha_disponibilidad, imagen, id_user
-      ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
-      ) RETURNING *`,
-      values
-    );
+  const res = await pool.query(
+    `INSERT INTO lote (
+      tipo, numLote, manzana, direccion,
+      id_colonia, id_ciudad, id_estado,
+      superficie_m2, precio, valor_avaluo,
+      num_habitaciones, num_banos, num_estacionamientos,
+      servicios, descripcion, topografia, documentacion,
+      estado_propiedad, fecha_disponibilidad, imagen, id_user
+    ) VALUES (
+      $1, $2, $3, $4,
+      $5, $6, $7,
+      $8, $9, $10,
+      $11, $12, $13,
+      $14, $15, $16, $17,
+      $18, $19, $20, $21
+    ) RETURNING *`,
+    values
+  );
 
-    return res.rows[0];
-  },
+  return res.rows[0];
+},
+
 
   update: async (id, data) => {
     const { error } = loteSchema.validate(data, { presence: 'optional' });
