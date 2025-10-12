@@ -7,9 +7,9 @@ const loteSchema = Joi.object({
   numLote: Joi.string().max(20).required(),
   manzana: Joi.string().max(10).allow(null, ''),
   direccion: Joi.string().required(),
-  colonia: Joi.string().max(100).allow(null, ''),
-  ciudad: Joi.string().max(100).allow(null, ''),
-  estado: Joi.string().max(100).allow(null, ''),
+  id_colonia: Joi.number().integer().allow(null),
+  id_ciudad: Joi.number().integer().allow(null),
+  id_estado: Joi.number().integer().allow(null),
   codigo_postal: Joi.string().max(10).allow(null, ''),
   superficie_m2: Joi.number().positive().required(),
   precio: Joi.number().min(0).required(),
@@ -40,41 +40,20 @@ const Lote = {
     return res.rows[0];
   },
 
-  create: async (data) => {
+create: async (data) => {
+  console.log('Datos recibidos para crear lote:', data);
+
   // Validamos solo los campos que vienen del cliente
   const { error } = loteSchema.validate(data);
   if (error) throw new Error(error.details[0].message);
 
-  // Convertir nombres en IDs
-  let id_estado = null, id_ciudad = null, id_colonia = null;
+  // Usar los IDs directamente si vienen
+  const id_estado = data.id_estado ? parseInt(data.id_estado) : null;
+  const id_ciudad = data.id_ciudad ? parseInt(data.id_ciudad) : null;
+  const id_colonia = data.id_colonia ? parseInt(data.id_colonia) : null;
 
-  if(data.estado){
-    const estadoRow = await pool.query(
-      'SELECT id_estado FROM estado WHERE nombre_estado=$1', [data.estado]
-    );
-    if(estadoRow.rowCount === 0) throw new Error('Estado no encontrado');
-    id_estado = estadoRow.rows[0].id_estado;
-  }
+  if (!id_colonia) throw new Error('id_colonia es obligatorio');
 
-  if(data.ciudad){
-    const ciudadRow = await pool.query(
-      'SELECT id_ciudad FROM ciudad WHERE nombre_ciudad=$1 AND id_estado=$2',
-      [data.ciudad, id_estado]
-    );
-    if(ciudadRow.rowCount === 0) throw new Error('Ciudad no encontrada');
-    id_ciudad = ciudadRow.rows[0].id_ciudad;
-  }
-
-  if(data.colonia){
-    const coloniaRow = await pool.query(
-      'SELECT id_colonia FROM colonia WHERE nombre_colonia=$1 AND id_ciudad=$2',
-      [data.colonia, id_ciudad]
-    );
-    if(coloniaRow.rowCount === 0) throw new Error('Colonia no encontrada');
-    id_colonia = coloniaRow.rows[0].id_colonia;
-  }
-
-  // --- Ahora sí armamos el INSERT solo con los IDs internos ---
   const values = [
     data.tipo,
     data.numLote,
@@ -120,6 +99,8 @@ const Lote = {
 
   return res.rows[0];
 },
+
+
 
   update: async (id, data) => {
     const { error } = loteSchema.validate(data, { presence: 'optional' });
