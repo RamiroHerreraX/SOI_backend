@@ -17,6 +17,22 @@ function addMonthsPreserveDay(date, months) {
   return result;
 }
 
+exports.obtenerContrato = asyncHandler(async (req, res) => {
+  const query = `
+    SELECT cv.*, 
+           c.nombre AS cliente_nombre, c.apellido_paterno, c.apellido_materno, c.correo, c.telefono,
+           l.tipo AS lote_tipo, l.numlote, l.direccion
+    FROM contrato_venta cv
+    INNER JOIN cliente c ON cv.id_cliente = c.id_cliente
+    INNER JOIN lote l ON cv.id_lote = l.id_propiedad
+    ORDER BY cv.fecha_contrato DESC
+  `;
+
+  const result = await pool.query(query);
+  res.json(result.rows);
+});
+
+
 exports.createContrato = asyncHandler(async (req, res) => {
   // validar input
   const { error } = ContratoVenta.validate(req.body);
