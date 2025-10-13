@@ -17,6 +17,13 @@ exports.getLoteById = asyncHandler(async (req,res)=>{
 
 exports.createLote = asyncHandler(async (req, res) => {
   try {
+    const { error } = loteSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({
+        mensaje: "Errores de validación",
+        detalles: error.details.map(err => err.message)
+      });
+    }
     const data = { ...req.body };
 
     if (req.file) {

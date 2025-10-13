@@ -3,29 +3,76 @@ const Joi = require('joi');
 
 // Validación de los campos del lote
 const loteSchema = Joi.object({
-  tipo: Joi.string().valid('casa','depto','terreno','local','otro').required(),
-  numLote: Joi.string().max(20).required(),
-  manzana: Joi.string().max(10).allow(null, ''),
-  direccion: Joi.string().required(),
-  id_colonia: Joi.number().integer().allow(null),
-  id_ciudad: Joi.number().integer().allow(null),
-  id_estado: Joi.number().integer().allow(null),
-  codigo_postal: Joi.string().max(10).allow(null, ''),
-  nombre_colonia_nueva: Joi.string().max(100).allow(null, ''),
-  superficie_m2: Joi.number().positive().required(),
-  precio: Joi.number().min(0).required(),
-  valor_avaluo: Joi.number().min(0).allow(null),
-  num_habitaciones: Joi.number().integer().min(0).allow(null),
-  num_banos: Joi.number().integer().min(0).allow(null),
-  num_estacionamientos: Joi.number().integer().min(0).allow(null),
+  tipo: Joi.string().valid('casa','depto','terreno','local','otro').required().messages({
+      'any.required': 'El campo "tipo" es obligatorio',
+      'any.only': 'El campo "tipo" debe ser uno de: casa, depto, terreno, local, otro',
+      'string.base': 'El campo "tipo" debe ser un texto'
+    }),
+  numLote: Joi.string().max(20).required().messages({
+      'any.required': 'El campo "numLote" es obligatorio',
+      'string.max': 'El campo "numLote" no debe exceder los 20 caracteres'
+    }),
+  manzana: Joi.string().max(10).allow(null, '').messages({
+      'string.max': 'El campo "manzana" no debe exceder los 10 caracteres'
+    }),
+  direccion: Joi.string().required().messages({
+      'any.required': 'El campo "dirección" es obligatorio'
+    }),
+  id_colonia: Joi.number().integer().allow(null).messages({
+      'number.base': 'El campo "id_colonia" debe ser un número'
+    }),
+  id_ciudad: Joi.number().integer().allow(null).messages({
+      'number.base': 'El campo "id_ciudad" debe ser un número'
+    }),
+  id_estado: Joi.number().integer().allow(null).messages({
+      'number.base': 'El campo "id_estado" debe ser un número'
+    }),
+  codigo_postal: Joi.string().pattern(/^\d{5}$/).allow(null, '').messages({
+      'string.pattern.base': 'El código postal debe tener 5 dígitos numéricos'
+    }),
+  nombre_colonia_nueva: Joi.string().max(100).allow(null, '').messages({
+      'string.max': 'El nombre de la colonia no debe exceder los 100 caracteres'
+    }),
+  superficie_m2: Joi.number().positive().required().messages({
+      'any.required': 'El campo "superficie_m2" es obligatorio',
+      'number.positive': 'La superficie debe ser mayor a 0'
+    }),
+  precio: Joi.number().min(0).required().messages({
+      'any.required': 'El precio es obligatorio',
+      'number.min': 'El precio no puede ser negativo'
+    }),
+  valor_avaluo: Joi.number().min(0).allow(null).messages({
+      'number.min': 'El valor de avalúo no puede ser negativo'
+    }),
+  num_habitaciones: Joi.number().integer().min(0).allow(null).messages({
+      'number.base': 'El número de habitaciones debe ser un número',
+      'number.min': 'El número de habitaciones no puede ser negativo'
+    }),
+  num_banos: Joi.number().integer().min(0).allow(null).messages({
+      'number.base': 'El número de baños debe ser un número',
+      'number.min': 'El número de baños no puede ser negativo'
+    }),
+  num_estacionamientos: Joi.number().integer().min(0).allow(null).messages({
+      'number.base': 'El número de estacionamientos debe ser un número',
+      'number.min': 'El número de estacionamientos no puede ser negativo'
+    }),
   servicios: Joi.string().allow(null, ''),
   descripcion: Joi.string().allow(null, ''),
   topografia: Joi.string().max(50).allow(null, ''),
   documentacion: Joi.string().allow(null, ''),
-  estado_propiedad: Joi.string().valid('disponible','rentada','vendida','en proceso').required(),
-  fecha_disponibilidad: Joi.date().allow(null),
-  imagen: Joi.string().uri().allow(null, ''),
-  id_user: Joi.number().integer().allow(null)
+  estado_propiedad: Joi.string().valid('disponible','rentada','vendida','en proceso').required().messages({
+      'any.required': 'El estado de la propiedad es obligatorio',
+      'any.only': 'El estado de la propiedad debe ser: disponible, rentada, vendida, en proceso'
+    }),
+  fecha_disponibilidad: Joi.date().allow(null).messages({
+      'date.base': 'La fecha de disponibilidad no es válida'
+    }),
+  imagen: Joi.string().uri().allow(null, '').messages({
+    'string.uri': 'La URL de la imagen no es válida'
+  }),
+  id_user: Joi.number().integer().allow(null).messages({
+      'number.base': 'El id del usuario debe ser un número'
+    })
 });
 
 const Lote = {
