@@ -2,13 +2,37 @@ const pool = require('../db');
 const Joi = require('joi');
 
 const pagoSchema = Joi.object({
-  id_contrato: Joi.number().integer().positive().required(),
-  numero_pago: Joi.number().integer().positive().required(),
-  monto: Joi.number().precision(2).positive().required(),
-  fecha_pago: Joi.date().required(),
-  metodo_pago: Joi.string().max(50).allow(null, ''),
-  estado_pago: Joi.string().valid('pendiente','pagado','atrasado').default('pendiente')
+  id_contrato: Joi.number().integer().positive().required().messages({
+    'any.required': 'El id del contrato es obligatorio',
+    'number.base': 'El id del contrato debe ser un número',
+    'number.integer': 'El id del contrato debe ser un número entero',
+    'number.positive': 'El id del contrato debe ser mayor a 0'
+  }),
+  numero_pago: Joi.number().integer().positive().required().messages({
+    'any.required': 'El número de pago es obligatorio',
+    'number.base': 'El número de pago debe ser un número',
+    'number.integer': 'El número de pago debe ser un número entero',
+    'number.positive': 'El número de pago debe ser mayor a 0'
+  }),
+  monto: Joi.number().precision(2).positive().required().messages({
+    'any.required': 'El monto del pago es obligatorio',
+    'number.base': 'El monto debe ser un número',
+    'number.positive': 'El monto debe ser mayor a 0',
+    'number.precision': 'El monto no puede tener más de 2 decimales'
+  }),
+  fecha_pago: Joi.date().required().messages({
+    'any.required': 'La fecha de pago es obligatoria',
+    'date.base': 'La fecha de pago no es válida'
+  }),
+  metodo_pago: Joi.string().max(50).allow(null, '').messages({
+    'string.base': 'El método de pago debe ser un texto',
+    'string.max': 'El método de pago no debe exceder los 50 caracteres'
+  }),
+  estado_pago: Joi.string().valid('pendiente','pagado','atrasado').default('pendiente').messages({
+    'any.only': 'El estado del pago debe ser: pendiente, pagado o atrasado'
+  })
 });
+
 
 const Pago = {
   validate: (data) => pagoSchema.validate(data),

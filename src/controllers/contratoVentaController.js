@@ -53,7 +53,7 @@ exports.createContrato = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: `Lote no disponible (estado actual: ${lote.estado_propiedad})` });
     }
 
-    // 2) Cliente: si id_cliente dado, comprobar existencia; si no, buscar por correo; si no existe y vienen datos, crear
+    // Cliente: si id_cliente dado, comprobar existencia; si no, buscar por correo; si no existe y vienen datos, crear
     let finalClienteId = id_cliente ? parseInt(id_cliente) : null;
     if (finalClienteId) {
       const clienteExist = await client.query('SELECT id_cliente FROM cliente WHERE id_cliente=$1', [finalClienteId]);
@@ -84,7 +84,7 @@ exports.createContrato = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'Debe proporcionar id_cliente o correo_cliente con datos para crear cliente' });
     }
 
-    // 3) Crear contrato
+    // Crear contrato
     const precioNum = parseFloat(precio_total);
     const engancheNum = parseFloat(enganche);
     const plazoNum = parseInt(plazo_meses, 10);
@@ -98,10 +98,10 @@ exports.createContrato = asyncHandler(async (req, res) => {
       estado_contrato
     });
 
-    // 4) Calcular mensualidad (redondeo a 2 decimales)
+    // Calcular mensualidad (redondeo a 2 decimales)
     const mensualidad = parseFloat(((precioNum - engancheNum) / plazoNum).toFixed(2));
 
-    // 5) Generar pagos mismos día
+    // Generar pagos mismos día
     const pagos = [];
     const contratoDate = new Date(); // fecha inicio (hoy)
     for (let i = 1; i <= plazoNum; i++) {
@@ -116,10 +116,10 @@ exports.createContrato = asyncHandler(async (req, res) => {
       });
     }
 
-    // 6) Insertar pagos
+    // Insertar pagos
     const pagosCreados = await Pago.createBulk(client, pagos);
 
-    // 7) Actualizar estado del lote a "en proceso" (o 'vendida' si prefieres)
+    // Actualizar estado del lote a "en proceso" (o 'vendida' si prefieres)
     await client.query('UPDATE lote SET estado_propiedad=$1 WHERE id_propiedad=$2', ['en proceso', id_lote]);
 
     await client.query('COMMIT');

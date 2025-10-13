@@ -2,12 +2,31 @@ const pool = require('../db');
 const Joi = require('joi');
 
 const clienteSchema = Joi.object({
-  nombre: Joi.string().max(100).required().messages({ 'any.required': 'El nombre es obligatorio' }),
-  apellido_paterno: Joi.string().max(50).required().messages({ 'any.required': 'El apellido paterno es obligatorio' }),
-  apellido_materno: Joi.string().max(50).allow(null, ''),
-  correo: Joi.string().email().required().messages({ 'any.required': 'El correo es obligatorio', 'string.email': 'Correo inválido' }),
-  telefono: Joi.string().max(20).allow(null, '')
+  nombre: Joi.string().max(100).required().messages({
+    'any.required': 'El nombre es obligatorio',
+    'string.base': 'El nombre debe ser un texto',
+    'string.max': 'El nombre no debe exceder los 100 caracteres'
+  }),
+  apellido_paterno: Joi.string().max(50).required().messages({
+    'any.required': 'El apellido paterno es obligatorio',
+    'string.base': 'El apellido paterno debe ser un texto',
+    'string.max': 'El apellido paterno no debe exceder los 50 caracteres'
+  }),
+  apellido_materno: Joi.string().max(50).allow(null, '').messages({
+    'string.base': 'El apellido materno debe ser un texto',
+    'string.max': 'El apellido materno no debe exceder los 50 caracteres'
+  }),
+  correo: Joi.string().email().required().messages({
+    'any.required': 'El correo es obligatorio',
+    'string.email': 'Correo inválido',
+    'string.base': 'El correo debe ser un texto'
+  }),
+  telefono: Joi.string().max(20).allow(null, '').messages({
+    'string.base': 'El teléfono debe ser un texto',
+    'string.max': 'El teléfono no debe exceder los 20 caracteres'
+  })
 });
+
 
 const Cliente = {
   validate: (data) => clienteSchema.validate(data),
