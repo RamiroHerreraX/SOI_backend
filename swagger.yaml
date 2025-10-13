@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: API Inmobiliaria INDES
-  description: Documentación de los endpoints para gestión de Lotes y Usuarios
+  description: Documentación de los endpoints para gestión de Lotes, Usuarios y Autenticación
   version: "1.0.0"
 
 servers:
@@ -13,15 +13,8 @@ tags:
     description: Endpoints para gestión de propiedades
   - name: Usuarios
     description: Endpoints para gestión de usuarios
-  - name: Ubicaciones
-    description: Endpoints para obtener Estados, Ciudades y Colonias
-  - name: Clientes
-    description: Endpoints para gestión de clientes
-  - name: Contratos
-    description: Endpoints para gestión de contratos de venta
-  - name: Pagos
-    description: Endpoints para gestión de pagos
-
+  - name: Autenticación
+    description: Endpoints para login, verificación 2FA y recuperación de contraseña
 
 paths:
   /lotes:
@@ -50,10 +43,6 @@ paths:
       responses:
         "201":
           description: Lote creado exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Lote"
         "400":
           description: Error al crear lote
 
@@ -70,10 +59,6 @@ paths:
       responses:
         "200":
           description: Lote encontrado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Lote"
         "404":
           description: Lote no encontrado
 
@@ -193,284 +178,88 @@ paths:
         "200":
           description: Usuario eliminado
 
-  /estados:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener todos los estados
-      responses:
-        "200":
-          description: Lista de estados
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_estado:
-                      type: integer
-                    nombre_estado:
-                      type: string
-
-  /ciudades/{estadoId}:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener ciudades por estado
-      parameters:
-        - name: estadoId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de ciudades del estado
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_ciudad:
-                      type: integer
-                    nombre_ciudad:
-                      type: string
-                    id_estado:
-                      type: integer
-        "404":
-          description: No se encontraron ciudades
-
-  /colonias/{ciudadId}:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener colonias por ciudad
-      parameters:
-        - name: ciudadId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de colonias por ciudad
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_colonia:
-                      type: integer
-                    nombre_colonia:
-                      type: string
-                    id_ciudad:
-                      type: integer
-        "404":
-          description: No se encontraron colonias
-
-  /codigo-postal/{codigoPostal}:
-    get:
-      tags: [Ubicaciones]
-      summary: Buscar ciudad y colonias por código postal
-      parameters:
-        - name: codigoPostal
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Resultados del código postal
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id_estado:
-                    type: integer
-                  nombre_estado:
-                    type: string
-                  id_ciudad:
-                    type: integer
-                  nombre_ciudad:
-                    type: string
-                  colonias:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id_colonia:
-                          type: integer
-                        nombre_colonia:
-                          type: string
-                        codigo_postal:
-                          type: string
-        "404":
-          description: Código postal no encontrado
-  /clientes:
-    get:
-      tags: [Clientes]
-      summary: Obtener todos los clientes
-      responses:
-        "200":
-          description: Lista de clientes
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Cliente"
-
+  # ============================
+  # 🔐 AUTENTICACIÓN
+  # ============================
+  /auth/login:
     post:
-      tags: [Clientes]
-      summary: Crear un nuevo cliente
+      tags: [Autenticación]
+      summary: Inicia sesión con correo y contraseña
       requestBody:
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Cliente"
-      responses:
-        "201":
-          description: Cliente creado
-        "400":
-          description: Error de validación
-
-  /clientes/{id}:
-    get:
-      tags: [Clientes]
-      summary: Obtener un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Cliente encontrado
-        "404":
-          description: Cliente no encontrado
-
-    put:
-      tags: [Clientes]
-      summary: Actualizar un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Cliente"
-      responses:
-        "200":
-          description: Cliente actualizado
-
-    delete:
-      tags: [Clientes]
-      summary: Eliminar un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Cliente eliminado
-
-  /contratos:
-    get:
-      tags: [Contratos]
-      summary: Obtener todos los contratos
-      responses:
-        "200":
-          description: Lista de contratos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ContratoVenta"
-
-    post:
-      tags: [Contratos]
-      summary: Crear un nuevo contrato de venta
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ContratoVenta"
-      responses:
-        "201":
-          description: Contrato creado
-        "400":
-          description: Error de validación
-
-  /pagos/contrato/{id}:
-    get:
-      tags: [Pagos]
-      summary: Obtener todos los pagos de un contrato específico
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID del contrato
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de pagos del contrato
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Pago"
-        "404":
-          description: Contrato no encontrado
-
-  /pagos/marcar-pagado/{id_pago}:
-    put:
-      tags: [Pagos]
-      summary: Marcar un pago como pagado
-      parameters:
-        - name: id_pago
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                metodo_pago:
+                correo:
                   type: string
-                  description: Método de pago (efectivo, transferencia, tarjeta, etc.)
+                password:
+                  type: string
       responses:
         "200":
-          description: Pago marcado como pagado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pago"
-        "404":
-          description: Pago no encontrado
+          description: OTP enviado al correo
         "400":
-          description: Error al actualizar el pago
+          description: Error de validación
 
+  /auth/verify-otp:
+    post:
+      tags: [Autenticación]
+      summary: Verifica el código OTP recibido por correo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correo:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        "200":
+          description: Autenticación completada
 
+  /auth/send-reset:
+    post:
+      tags: [Autenticación]
+      summary: Enviar enlace de recuperación de contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correo:
+                  type: string
+      responses:
+        "200":
+          description: Enlace enviado
+
+  /auth/reset/{token}:
+    post:
+      tags: [Autenticación]
+      summary: Restablecer la contraseña usando token
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Contraseña actualizada
 
 components:
   schemas:
@@ -558,56 +347,3 @@ components:
           type: string
         telefono:
           type: string
-    Cliente:
-      type: object
-      properties:
-        nombre:
-          type: string
-        apellido_paterno:
-          type: string
-        apellido_materno:
-          type: string
-          nullable: true
-        correo:
-          type: string
-        telefono:
-          type: string
-          nullable: true
-
-    ContratoVenta:
-      type: object
-      properties:
-        id_lote:
-          type: integer
-        id_cliente:
-          type: integer
-        precio_total:
-          type: number
-        enganche:
-          type: number
-        plazo_meses:
-          type: integer
-        estado_contrato:
-          type: string
-          enum: [activo, cancelado, pagado]
-          default: activo
-
-    Pago:
-      type: object
-      properties:
-        id_contrato:
-          type: integer
-        numero_pago:
-          type: integer
-        monto:
-          type: number
-        fecha_pago:
-          type: string
-          format: date
-        metodo_pago:
-          type: string
-          default: efectivo
-        estado_pago:
-          type: string
-          enum: [pendiente, pagado, atrasado]
-          default: pendiente
