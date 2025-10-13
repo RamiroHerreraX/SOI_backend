@@ -20,10 +20,16 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const userRoutes = require('./routes/userRoutes');
 const loteRoutes = require('./routes/loteRoutes');
 const ubicacionRoutes = require('./routes/ubicacionRoutes');
+const clientesRouter = require('./routes/clienteRoutes');
+const contratosRouter = require('./routes/contratoRoutes');
+const pagosRouter = require('./routes/pagosRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/lotes', loteRoutes);
 app.use('/api', ubicacionRoutes);
+app.use('/api/clientes', clientesRouter);
+app.use('/api/contratos', contratosRouter);
+app.use('/api/pagos', pagosRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
