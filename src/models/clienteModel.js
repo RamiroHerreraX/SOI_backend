@@ -21,9 +21,9 @@ const clienteSchema = Joi.object({
     'string.email': 'Correo inválido',
     'string.base': 'El correo debe ser un texto'
   }),
-  telefono: Joi.string().max(20).allow(null, '').messages({
+  telefono: Joi.string().pattern(/^\d{10}$/).allow(null, '').messages({
     'string.base': 'El teléfono debe ser un texto',
-    'string.max': 'El teléfono no debe exceder los 20 caracteres'
+    'string.max': 'El teléfono debe contener exactamente 10 dígitos'
   })
 });
 

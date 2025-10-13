@@ -573,9 +573,6 @@ components:
         telefono:
           type: string
           nullable: true
-        activo:
-          type: boolean
-          default: true
 
     ContratoVenta:
       type: object
