@@ -1,9 +1,12 @@
 const pool = require('../db');
 
-// Obtener todos los estados
+// ✅ Obtener todos los estados
 const getEstados = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM estado ORDER BY nombre_estado');
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No hay estados registrados' });
+    }
     res.json(result.rows);
   } catch (error) {
     console.error(error);
@@ -11,14 +14,25 @@ const getEstados = async (req, res) => {
   }
 };
 
-// Obtener ciudades por estado
+// ✅ Obtener ciudades por estado (con validación)
 const getCiudades = async (req, res) => {
   const { estadoId } = req.params;
+
+  // Validar que sea un número
+  if (!/^\d+$/.test(estadoId)) {
+    return res.status(400).json({ message: 'El ID del estado debe ser numérico' });
+  }
+
   try {
     const result = await pool.query(
       'SELECT * FROM ciudad WHERE id_estado = $1 ORDER BY nombre_ciudad',
       [estadoId]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron ciudades para este estado' });
+    }
+
     res.json(result.rows);
   } catch (error) {
     console.error(error);
@@ -26,14 +40,24 @@ const getCiudades = async (req, res) => {
   }
 };
 
-// Obtener colonias por ciudad
+// ✅ Obtener colonias por ciudad (con validación)
 const getColonias = async (req, res) => {
   const { ciudadId } = req.params;
+
+  if (!/^\d+$/.test(ciudadId)) {
+    return res.status(400).json({ message: 'El ID de la ciudad debe ser numérico' });
+  }
+
   try {
     const result = await pool.query(
       'SELECT * FROM colonia WHERE id_ciudad = $1 ORDER BY nombre_colonia',
       [ciudadId]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron colonias para esta ciudad' });
+    }
+
     res.json(result.rows);
   } catch (error) {
     console.error(error);
@@ -41,6 +65,7 @@ const getColonias = async (req, res) => {
   }
 };
 
+// ✅ Buscar ciudad y colonias por código postal (ya validado)
 const getCiudadPorCP = async (req, res) => {
   const { codigoPostal } = req.params;
   try {
@@ -59,14 +84,13 @@ const getCiudadPorCP = async (req, res) => {
       WHERE c.codigo_postal = $1
       ORDER BY c.nombre_colonia;
     `;
-    
+
     const { rows } = await pool.query(query, [codigoPostal]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Código postal no encontrado' });
     }
 
-    // Estructurar respuesta: Info general + Lista de colonias
     const respuesta = {
       id_estado: rows[0].id_estado,
       nombre_estado: rows[0].nombre_estado,
@@ -87,8 +111,13 @@ const getCiudadPorCP = async (req, res) => {
   }
 };
 
+// ✅ Obtener ciudad por ID
 const getCiudadById = async (req, res) => {
   const { id_ciudad } = req.params;
+
+  if (!/^\d+$/.test(id_ciudad)) {
+    return res.status(400).json({ message: 'El ID de la ciudad debe ser numérico' });
+  }
 
   try {
     const result = await pool.query(
@@ -109,6 +138,4 @@ const getCiudadById = async (req, res) => {
   }
 };
 
-
-
-module.exports = { getEstados, getCiudades, getColonias, getCiudadPorCP, getCiudadById  };
+module.exports = { getEstados, getCiudades, getColonias, getCiudadPorCP, getCiudadById };

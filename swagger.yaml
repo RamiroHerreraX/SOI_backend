@@ -13,6 +13,9 @@ tags:
     description: Endpoints para gestión de propiedades
   - name: Usuarios
     description: Endpoints para gestión de usuarios
+  - name: Ubicaciones             # 👈 Nuevo
+    description: Endpoints para obtener Estados, Ciudades y Colonias
+
 
 paths:
   /lotes:
@@ -183,6 +186,124 @@ paths:
       responses:
         "200":
           description: Usuario eliminado
+
+  /estados:
+    get:
+      tags: [Ubicaciones]
+      summary: Obtener todos los estados
+      responses:
+        "200":
+          description: Lista de estados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_estado:
+                      type: integer
+                    nombre_estado:
+                      type: string
+
+  /ciudades/{estadoId}:
+    get:
+      tags: [Ubicaciones]
+      summary: Obtener ciudades por estado
+      parameters:
+        - name: estadoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de ciudades del estado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_ciudad:
+                      type: integer
+                    nombre_ciudad:
+                      type: string
+                    id_estado:
+                      type: integer
+        "404":
+          description: No se encontraron ciudades
+
+  /colonias/{ciudadId}:
+    get:
+      tags: [Ubicaciones]
+      summary: Obtener colonias por ciudad
+      parameters:
+        - name: ciudadId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de colonias por ciudad
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_colonia:
+                      type: integer
+                    nombre_colonia:
+                      type: string
+                    id_ciudad:
+                      type: integer
+        "404":
+          description: No se encontraron colonias
+
+  /codigo-postal/{codigoPostal}:
+    get:
+      tags: [Ubicaciones]
+      summary: Buscar ciudad y colonias por código postal
+      parameters:
+        - name: codigoPostal
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resultados del código postal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_estado:
+                    type: integer
+                  nombre_estado:
+                    type: string
+                  id_ciudad:
+                    type: integer
+                  nombre_ciudad:
+                    type: string
+                  colonias:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_colonia:
+                          type: integer
+                        nombre_colonia:
+                          type: string
+                        codigo_postal:
+                          type: string
+        "404":
+          description: Código postal no encontrado
+
 
 components:
   schemas:
