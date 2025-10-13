@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 
 dotenv.config();
 const app = express();
@@ -16,6 +17,8 @@ const ubicacionRoutes = require('./routes/ubicacionRoutes');
 app.use('/api/users', userRoutes);
 app.use('/api/lotes', loteRoutes);
 app.use('/api', ubicacionRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 
 // Ruta raíz
