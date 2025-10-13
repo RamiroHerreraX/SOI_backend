@@ -6,9 +6,16 @@ const path = require('path');
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+
 
 app.use(cors());
 app.use(express.json());
+
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
 const userRoutes = require('./routes/userRoutes');
 const loteRoutes = require('./routes/loteRoutes');

@@ -1,0 +1,272 @@
+openapi: 3.0.0
+info:
+  title: API Inmobiliaria INDES
+  description: Documentación de los endpoints para gestión de Lotes y Usuarios
+  version: "1.0.0"
+
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Lotes
+    description: Endpoints para gestión de propiedades
+  - name: Usuarios
+    description: Endpoints para gestión de usuarios
+
+paths:
+  /lotes:
+    get:
+      tags: [Lotes]
+      summary: Obtener todos los lotes
+      responses:
+        "200":
+          description: Lista de lotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lote"
+
+    post:
+      tags: [Lotes]
+      summary: Crear un nuevo lote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Lote"
+      responses:
+        "201":
+          description: Lote creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lote"
+        "400":
+          description: Error al crear lote
+
+  /lotes/{id}:
+    get:
+      tags: [Lotes]
+      summary: Obtener un lote por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lote encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lote"
+        "404":
+          description: Lote no encontrado
+
+    put:
+      tags: [Lotes]
+      summary: Actualizar un lote por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Lote"
+      responses:
+        "200":
+          description: Lote actualizado
+        "400":
+          description: Error al actualizar lote
+
+    delete:
+      tags: [Lotes]
+      summary: Eliminar un lote por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lote eliminado
+
+  /users:
+    get:
+      tags: [Usuarios]
+      summary: Obtener todos los usuarios o filtrar por rol
+      parameters:
+        - name: rol
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+    post:
+      tags: [Usuarios]
+      summary: Crear un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "201":
+          description: Usuario creado
+        "400":
+          description: Error de validación
+
+  /users/{id}:
+    get:
+      tags: [Usuarios]
+      summary: Obtener un usuario por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usuario encontrado
+        "404":
+          description: Usuario no encontrado
+
+    put:
+      tags: [Usuarios]
+      summary: Actualizar un usuario por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: Usuario actualizado
+
+    delete:
+      tags: [Usuarios]
+      summary: Eliminar un usuario por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usuario eliminado
+
+components:
+  schemas:
+    Lote:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum: [casa, depto, terreno, local, otro]
+        numLote:
+          type: string
+        manzana:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+        id_colonia:
+          type: integer
+          nullable: true
+        id_ciudad:
+          type: integer
+          nullable: true
+        id_estado:
+          type: integer
+          nullable: true
+        codigo_postal:
+          type: string
+          nullable: true
+        nombre_colonia_nueva:
+          type: string
+          nullable: true
+        superficie_m2:
+          type: number
+        precio:
+          type: number
+        valor_avaluo:
+          type: number
+          nullable: true
+        num_habitaciones:
+          type: integer
+          nullable: true
+        num_banos:
+          type: integer
+          nullable: true
+        num_estacionamientos:
+          type: integer
+          nullable: true
+        servicios:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        topografia:
+          type: string
+          nullable: true
+        documentacion:
+          type: string
+          nullable: true
+        estado_propiedad:
+          type: string
+          enum: [disponible, rentada, vendida, en proceso]
+        fecha_disponibilidad:
+          type: string
+          format: date
+          nullable: true
+        imagen:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+          nullable: true
+
+    User:
+      type: object
+      properties:
+        usuario:
+          type: string
+        password:
+          type: string
+        rol:
+          type: string
+          enum: [admin, vendedor, cliente, dueño, secretaria]
+        correo:
+          type: string
+        telefono:
+          type: string
