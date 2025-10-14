@@ -24,8 +24,10 @@ tags:
   - name: Pagos
     description: Endpoints para gestión de pagos
 
-
 paths:
+  # =========================
+  # Lotes
+  # =========================
   /lotes:
     get:
       tags: [Lotes]
@@ -44,7 +46,6 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Lote"
-
     post:
       tags: [Lotes]
       summary: Crear un nuevo lote
@@ -64,36 +65,34 @@ paths:
                 properties:
                   status:
                     type: string
-                  lotes:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Lote"
+                  lote:
+                    $ref: "#/components/schemas/Lote"
         "400":
           description: Error al crear lote
 
   /lotes/buscar:
-    get:
+    post:
       tags: [Lotes]
-      summary: Obtener lote por numLote+manzana o por dirección según tipo
-      parameters:
-        - name: tipo
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: [casa, depto, terreno, local, otro]
-        - name: numLote
-          in: query
-          schema:
-            type: string
-        - name: manzana
-          in: query
-          schema:
-            type: string
-        - name: direccion
-          in: query
-          schema:
-            type: string
+      summary: Buscar lote usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipo:
+                  type: string
+                  enum: [casa, depto, terreno, local, otro]
+                numLote:
+                  type: string
+                  nullable: true
+                manzana:
+                  type: string
+                  nullable: true
+                direccion:
+                  type: string
+                  nullable: true
       responses:
         "200":
           description: Lote encontrado
@@ -114,31 +113,30 @@ paths:
   /lotes/actualizar:
     put:
       tags: [Lotes]
-      summary: Actualizar lote por numLote+manzana o dirección
-      parameters:
-        - name: tipo
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: numLote
-          in: query
-          schema:
-            type: string
-        - name: manzana
-          in: query
-          schema:
-            type: string
-        - name: direccion
-          in: query
-          schema:
-            type: string
+      summary: Actualizar lote usando JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Lote"
+              type: object
+              properties:
+                filtro:
+                  type: object
+                  properties:
+                    tipo:
+                      type: string
+                    numLote:
+                      type: string
+                      nullable: true
+                    manzana:
+                      type: string
+                      nullable: true
+                    direccion:
+                      type: string
+                      nullable: true
+                datos:
+                  $ref: "#/components/schemas/Lote"
       responses:
         "200":
           description: Lote actualizado
@@ -149,35 +147,33 @@ paths:
                 properties:
                   status:
                     type: string
-                  lotes:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Lote"
+                  lote:
+                    $ref: "#/components/schemas/Lote"
         "404":
           description: Lote no encontrado
 
   /lotes/eliminar:
     delete:
       tags: [Lotes]
-      summary: Eliminar lote por numLote+manzana o dirección
-      parameters:
-        - name: tipo
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: numLote
-          in: query
-          schema:
-            type: string
-        - name: manzana
-          in: query
-          schema:
-            type: string
-        - name: direccion
-          in: query
-          schema:
-            type: string
+      summary: Eliminar lote usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipo:
+                  type: string
+                numLote:
+                  type: string
+                  nullable: true
+                manzana:
+                  type: string
+                  nullable: true
+                direccion:
+                  type: string
+                  nullable: true
       responses:
         "200":
           description: Lote eliminado
@@ -188,22 +184,27 @@ paths:
                 properties:
                   status:
                     type: string
-                  lotes:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Lote"
+                  lote:
+                    $ref: "#/components/schemas/Lote"
         "404":
           description: Lote no encontrado
 
+  # =========================
+  # Usuarios
+  # =========================
   /users:
     get:
       tags: [Usuarios]
-      summary: Obtener todos los usuarios o filtrar por rol
-      parameters:
-        - name: rol
-          in: query
-          schema:
-            type: string
+      summary: Obtener usuarios filtrando por JSON
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rol:
+                  type: string
       responses:
         "200":
           description: Lista de usuarios
@@ -213,7 +214,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
-
     post:
       tags: [Usuarios]
       summary: Crear un nuevo usuario
@@ -229,57 +229,43 @@ paths:
         "400":
           description: Error de validación
 
-  /users/{id}:
-    get:
-      tags: [Usuarios]
-      summary: Obtener un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Usuario encontrado
-        "404":
-          description: Usuario no encontrado
-
+  /users/actualizar:
     put:
       tags: [Usuarios]
-      summary: Actualizar un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Actualizar usuario usando JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              type: object
+              properties:
+                id:
+                  type: integer
+                datos:
+                  $ref: "#/components/schemas/User"
       responses:
         "200":
           description: Usuario actualizado
-
     delete:
       tags: [Usuarios]
-      summary: Eliminar un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Eliminar usuario usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
       responses:
         "200":
           description: Usuario eliminado
 
-  # ============================
-  # 🔐 AUTENTICACIÓN
-  # ============================
+  # =========================
+  # Autenticación
+  # =========================
   /auth/login:
     post:
       tags: [Autenticación]
@@ -290,6 +276,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - correo
+                - password
               properties:
                 correo:
                   type: string
@@ -304,13 +293,16 @@ paths:
   /auth/verify-otp:
     post:
       tags: [Autenticación]
-      summary: Verifica el código OTP recibido por correo
+      summary: Verifica el código OTP
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - correo
+                - otp
               properties:
                 correo:
                   type: string
@@ -330,6 +322,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - correo
               properties:
                 correo:
                   type: string
@@ -337,305 +331,24 @@ paths:
         "200":
           description: Enlace enviado
 
-  /auth/reset/{token}:
+  /auth/reset:
     post:
       tags: [Autenticación]
       summary: Restablecer la contraseña usando token
-      parameters:
-        - in: path
-          name: token
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - token
+                - password
               properties:
+                token:
+                  type: string
                 password:
                   type: string
-      responses:
-        "200":
-          description: Contraseña actualizada
-  /estados:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener todos los estados
-      responses:
-        "200":
-          description: Lista de estados
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_estado:
-                      type: integer
-                    nombre_estado:
-                      type: string
-
-  /ciudades/{estadoId}:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener ciudades por estado
-      parameters:
-        - name: estadoId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de ciudades del estado
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_ciudad:
-                      type: integer
-                    nombre_ciudad:
-                      type: string
-                    id_estado:
-                      type: integer
-        "404":
-          description: No se encontraron ciudades
-
-  /colonias/{ciudadId}:
-    get:
-      tags: [Ubicaciones]
-      summary: Obtener colonias por ciudad
-      parameters:
-        - name: ciudadId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de colonias por ciudad
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_colonia:
-                      type: integer
-                    nombre_colonia:
-                      type: string
-                    id_ciudad:
-                      type: integer
-        "404":
-          description: No se encontraron colonias
-
-  /codigo-postal/{codigoPostal}:
-    get:
-      tags: [Ubicaciones]
-      summary: Buscar ciudad y colonias por código postal
-      parameters:
-        - name: codigoPostal
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Resultados del código postal
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id_estado:
-                    type: integer
-                  nombre_estado:
-                    type: string
-                  id_ciudad:
-                    type: integer
-                  nombre_ciudad:
-                    type: string
-                  colonias:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id_colonia:
-                          type: integer
-                        nombre_colonia:
-                          type: string
-                        codigo_postal:
-                          type: string
-        "404":
-          description: Código postal no encontrado
-  /clientes:
-    get:
-      tags: [Clientes]
-      summary: Obtener todos los clientes
-      responses:
-        "200":
-          description: Lista de clientes
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Cliente"
-
-    post:
-      tags: [Clientes]
-      summary: Crear un nuevo cliente
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Cliente"
-      responses:
-        "201":
-          description: Cliente creado
-        "400":
-          description: Error de validación
-
-  /clientes/{id}:
-    get:
-      tags: [Clientes]
-      summary: Obtener un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Cliente encontrado
-        "404":
-          description: Cliente no encontrado
-
-    put:
-      tags: [Clientes]
-      summary: Actualizar un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Cliente"
-      responses:
-        "200":
-          description: Cliente actualizado
-
-    delete:
-      tags: [Clientes]
-      summary: Eliminar un cliente por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Cliente eliminado
-
-  /contratos:
-    get:
-      tags: [Contratos]
-      summary: Obtener todos los contratos
-      responses:
-        "200":
-          description: Lista de contratos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ContratoVenta"
-
-    post:
-      tags: [Contratos]
-      summary: Crear un nuevo contrato de venta
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ContratoVenta"
-      responses:
-        "201":
-          description: Contrato creado
-        "400":
-          description: Error de validación
-
-  /pagos/contrato/{id}:
-    get:
-      tags: [Pagos]
-      summary: Obtener todos los pagos de un contrato específico
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID del contrato
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lista de pagos del contrato
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Pago"
-        "404":
-          description: Contrato no encontrado
-
-  /pagos/marcar-pagado/{id_pago}:
-    put:
-      tags: [Pagos]
-      summary: Marcar un pago como pagado
-      parameters:
-        - name: id_pago
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                metodo_pago:
-                  type: string
-                  description: Método de pago (efectivo, transferencia, tarjeta, etc.)
-      responses:
-        "200":
-          description: Pago marcado como pagado
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pago"
-        "404":
-          description: Pago no encontrado
-        "400":
-          description: Error al actualizar el pago
-
 
 components:
   schemas:
@@ -723,57 +436,4 @@ components:
           type: string
         telefono:
           type: string
-    Cliente:
-      type: object
-      properties:
-        nombre:
-          type: string
-        apellido_paterno:
-          type: string
-        apellido_materno:
-          type: string
-          nullable: true
-        correo:
-          type: string
-        telefono:
-          type: string
-          nullable: true
-
-    ContratoVenta:
-      type: object
-      properties:
-        id_lote:
-          type: integer
-        id_cliente:
-          type: integer
-        precio_total:
-          type: number
-        enganche:
-          type: number
-        plazo_meses:
-          type: integer
-        estado_contrato:
-          type: string
-          enum: [activo, cancelado, pagado]
-          default: activo
-
-    Pago:
-      type: object
-      properties:
-        id_contrato:
-          type: integer
-        numero_pago:
-          type: integer
-        monto:
-          type: number
-        fecha_pago:
-          type: string
-          format: date
-        metodo_pago:
-          type: string
-          default: efectivo
-        estado_pago:
-          type: string
-          enum: [pendiente, pagado, atrasado]
-          default: pendiente
-
+          description: Debe tener 10 dígitos
