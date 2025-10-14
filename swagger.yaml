@@ -36,9 +36,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Lote"
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lote"
 
     post:
       tags: [Lotes]
@@ -52,34 +57,82 @@ paths:
       responses:
         "201":
           description: Lote creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lote"
         "400":
           description: Error al crear lote
 
-  /lotes/{id}:
+  /lotes/buscar:
     get:
       tags: [Lotes]
-      summary: Obtener un lote por ID
+      summary: Obtener lote por numLote+manzana o por dirección según tipo
       parameters:
-        - name: id
-          in: path
+        - name: tipo
+          in: query
           required: true
           schema:
-            type: integer
+            type: string
+            enum: [casa, depto, terreno, local, otro]
+        - name: numLote
+          in: query
+          schema:
+            type: string
+        - name: manzana
+          in: query
+          schema:
+            type: string
+        - name: direccion
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: Lote encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lote"
         "404":
           description: Lote no encontrado
 
+  /lotes/actualizar:
     put:
       tags: [Lotes]
-      summary: Actualizar un lote por ID
+      summary: Actualizar lote por numLote+manzana o dirección
       parameters:
-        - name: id
-          in: path
+        - name: tipo
+          in: query
           required: true
           schema:
-            type: integer
+            type: string
+        - name: numLote
+          in: query
+          schema:
+            type: string
+        - name: manzana
+          in: query
+          schema:
+            type: string
+        - name: direccion
+          in: query
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -89,21 +142,58 @@ paths:
       responses:
         "200":
           description: Lote actualizado
-        "400":
-          description: Error al actualizar lote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lote"
+        "404":
+          description: Lote no encontrado
 
+  /lotes/eliminar:
     delete:
       tags: [Lotes]
-      summary: Eliminar un lote por ID
+      summary: Eliminar lote por numLote+manzana o dirección
       parameters:
-        - name: id
-          in: path
+        - name: tipo
+          in: query
           required: true
           schema:
-            type: integer
+            type: string
+        - name: numLote
+          in: query
+          schema:
+            type: string
+        - name: manzana
+          in: query
+          schema:
+            type: string
+        - name: direccion
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: Lote eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lote"
+        "404":
+          description: Lote no encontrado
 
   /users:
     get:
