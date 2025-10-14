@@ -5,14 +5,17 @@ const Joi = require('joi');
 const SALT_ROUNDS = 10;
 
 // ====== VALIDACIÓN DE DATOS ======
+
+
 const userSchema = Joi.object({
   usuario: Joi.string().min(3).max(50).required(),
   password: Joi.string().min(6).required(),
   // rol: Joi.string().valid('admin','vendedor','cliente','dueño','secretaria').required(),
   rol: Joi.string().valid('secretaria', 'encargado').required(),
   correo: Joi.string().email().required(),
-  telefono: Joi.string().pattern(/^[0-9]{10,15}$/).required()
+  telefono: Joi.string().pattern(/^[0-9]{10}$/).required() // Solo 10 dígitos
 });
+
 
 const User = {
   // ================== VALIDACIÓN ==================

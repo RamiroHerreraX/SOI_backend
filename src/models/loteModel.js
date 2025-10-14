@@ -217,7 +217,21 @@ create: async (data) => {
   }
 },
 
+getByNumLoteManzana: async (numLote, manzana) => {
+  const res = await pool.query(
+    'SELECT * FROM lote WHERE numLote=$1 AND manzana IS NOT DISTINCT FROM $2 LIMIT 1',
+    [numLote, manzana]
+  );
+  return res.rows[0];
+},
 
+getByDireccion: async (direccion) => {
+  const res = await pool.query(
+    'SELECT * FROM lote WHERE direccion=$1 LIMIT 1',
+    [direccion]
+  );
+  return res.rows[0];
+},
 
   delete: async (id) => {
     const res = await pool.query(
@@ -226,6 +240,9 @@ create: async (data) => {
     );
     return res.rows[0];
   }
+    
 };
+
+
 
 module.exports = Lote;
