@@ -6,8 +6,8 @@ exports.getAll = asyncHandler(async (req, res) => {
   res.json(clientes);
 });
 
-exports.getById = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.getById(req.params.id);
+exports.getByCurp = asyncHandler(async (req, res) => {
+  const cliente = await Cliente.getByCurp(req.params.curp);
   if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
   res.json(cliente);
 });
@@ -25,11 +25,11 @@ exports.create = asyncHandler(async (req, res) => {
 });
 
 exports.update = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.update(req.params.id, req.body);
+  const cliente = await Cliente.update(req.params.curp, req.body);
   res.json(cliente);
 });
 
 exports.delete = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.delete(req.params.id);
+  const cliente = await Cliente.delete(req.params.curp);
   res.json(cliente);
 });

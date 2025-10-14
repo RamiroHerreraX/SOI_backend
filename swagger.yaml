@@ -385,6 +385,7 @@ paths:
                           type: string
         "404":
           description: Código postal no encontrado
+
   /clientes:
     get:
       tags: [Clientes]
@@ -414,16 +415,16 @@ paths:
         "400":
           description: Error de validación
 
-  /clientes/{id}:
+  /clientes/{curp}:
     get:
       tags: [Clientes]
-      summary: Obtener un cliente por ID
+      summary: Obtener un cliente por CURP
       parameters:
-        - name: id
+        - name: curp
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Cliente encontrado
@@ -432,13 +433,13 @@ paths:
 
     put:
       tags: [Clientes]
-      summary: Actualizar un cliente por ID
+      summary: Actualizar un cliente por CURP
       parameters:
-        - name: id
+        - name: curp
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -448,19 +449,23 @@ paths:
       responses:
         "200":
           description: Cliente actualizado
+        "400":
+          description: Error al actualizar cliente
 
     delete:
       tags: [Clientes]
-      summary: Eliminar un cliente por ID
+      summary: Eliminar un cliente por CURP
       parameters:
-        - name: id
+        - name: curp
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Cliente eliminado
+        "404":
+          description: Cliente no encontrado
 
   /contratos:
     get:
@@ -646,6 +651,18 @@ components:
         correo:
           type: string
         telefono:
+          type: string
+          nullable: true
+        curp:
+          type: string
+          description: Clave Única de Registro de Población (18 caracteres)
+        clave_elector:
+          type: string
+          nullable: true
+        doc_identificacion:
+          type: string
+          nullable: true
+        doc_curp:
           type: string
           nullable: true
 

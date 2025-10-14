@@ -24,7 +24,23 @@ const clienteSchema = Joi.object({
   telefono: Joi.string().pattern(/^\d{10}$/).allow(null, '').messages({
     'string.base': 'El teléfono debe ser un texto',
     'string.max': 'El teléfono debe contener exactamente 10 dígitos'
-  })
+  }),
+   curp: Joi.string().length(18).required().messages({
+    'any.required': 'La CURP es obligatoria',
+    'string.length': 'La CURP debe tener 18 caracteres'
+  }),
+  clave_elector: Joi.string().length(20).allow(null, '').messages({
+    'string.max': 'La Clave de Elector no debe exceder los 20 caracteres'
+  }),
+
+  doc_identificacion: Joi.string().allow(null, '').messages({
+    'string.base': 'El documento de identificación debe ser una cadena de texto (ruta o URL)'
+  }),
+
+  doc_curp: Joi.string().allow(null, '').messages({
+    'string.base': 'El documento de CURP debe ser una cadena de texto (ruta o URL)'
+  }),
+
 });
 
 
@@ -36,8 +52,8 @@ const Cliente = {
     return res.rows;
   },
 
-  getById: async (id) => {
-    const res = await pool.query('SELECT * FROM cliente WHERE id_cliente=$1', [id]);
+  getByCurp: async (id) => {
+    const res = await pool.query('SELECT * FROM cliente WHERE curp=$1', [id]);
     return res.rows[0];
   },
 
@@ -47,28 +63,28 @@ const Cliente = {
   },
 
   create: async (data) => {
-    const { nombre, apellido_paterno, apellido_materno, correo, telefono } = data;
+    const { nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp} = data;
     const res = await pool.query(`
-      INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [nombre, apellido_paterno, apellido_materno || null, correo, telefono || null]);
+    `, [nombre, apellido_paterno, apellido_materno || null, correo, telefono || null, curp, clave_elector, doc_identificacion || null, doc_curp || null]);
     return res.rows[0];
   },
 
-  update: async (id, data) => {
+  update: async (curp, data) => {
     let fields = [], values = [], i = 1;
     for (const [key, value] of Object.entries(data)) {
       fields.push(`${key}=$${i++}`);
       values.push(value);
     }
     if (fields.length === 0) throw new Error("No hay datos válidos para actualizar");
-    const res = await pool.query(`UPDATE cliente SET ${fields.join(', ')} WHERE id_cliente=$${i} RETURNING *`, [...values, id]);
+    const res = await pool.query(`UPDATE cliente SET ${fields.join(', ')} WHERE curp=$${i} RETURNING *`, [...values, curp]);
     return res.rows[0];
   },
 
-  delete: async (id) => {
-    const res = await pool.query('DELETE FROM cliente WHERE id_cliente=$1 RETURNING *', [id]);
+  delete: async (curp) => {
+    const res = await pool.query('DELETE FROM cliente WHERE curp=$1 RETURNING *', [id]);
     return res.rows[0];
   }
 };
