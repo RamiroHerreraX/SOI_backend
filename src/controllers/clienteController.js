@@ -7,10 +7,20 @@ exports.getAll = asyncHandler(async (req, res) => {
 });
 
 exports.getByCurp = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.getByCurp(req.params.curp);
-  if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
+  const { curp } = req.body;
+
+  if (!curp) {
+    return res.status(400).json({ message: 'CURP es requerida para la búsqueda' });
+  }
+
+  const cliente = await Cliente.getByCurp(curp);
+  if (!cliente) {
+    return res.status(404).json({ message: 'Cliente no encontrado' });
+  }
+
   res.json(cliente);
 });
+
 
 exports.create = asyncHandler(async (req, res) => {
   const { error } = Cliente.validate(req.body);
@@ -25,11 +35,55 @@ exports.create = asyncHandler(async (req, res) => {
 });
 
 exports.update = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.update(req.params.curp, req.body);
-  res.json(cliente);
+  const { curp, datos } = req.body;
+
+  if (!curp) {
+    return res.status(400).json({ message: 'La CURP es requerida para la actualización' });
+  }
+
+  if (!datos || typeof datos !== 'object') {
+    return res.status(400).json({ message: 'El objeto "datos" es requerido con los campos del cliente' });
+  }
+
+  // No permitir actualizar la CURP misma dentro de "datos"
+  delete datos.curp;
+
+  // Verificar si el cliente existe
+  const clienteExistente = await Cliente.getByCurp(curp);
+  if (!clienteExistente) {
+    return res.status(404).json({ message: 'Cliente no encontrado' });
+  }
+
+  // Proceder con la actualización de todos los campos que envíes
+  const clienteActualizado = await Cliente.update(curp, datos);
+
+  res.status(200).json({
+    message: 'Cliente actualizado correctamente',
+    cliente: clienteActualizado
+  });
 });
 
+
+
 exports.delete = asyncHandler(async (req, res) => {
-  const cliente = await Cliente.delete(req.params.curp);
-  res.json(cliente);
+  const { curp } = req.body; // tomamos la CURP del body
+
+  if (!curp) {
+    return res.status(400).json({ message: 'La CURP es requerida para eliminar el cliente' });
+  }
+
+  // Verificar si existe el cliente
+  const clienteExistente = await Cliente.getByCurp(curp);
+  if (!clienteExistente) {
+    return res.status(404).json({ message: 'Cliente no encontrado' });
+  }
+
+  // Proceder con la eliminación
+  const clienteEliminado = await Cliente.delete(curp);
+
+  res.status(200).json({
+    message: 'Cliente eliminado correctamente',
+    cliente: clienteEliminado
+  });
 });
+

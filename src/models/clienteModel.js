@@ -84,9 +84,9 @@ const Cliente = {
   },
 
   delete: async (curp) => {
-    const res = await pool.query('DELETE FROM cliente WHERE curp=$1 RETURNING *', [id]);
+    const res = await pool.query('DELETE FROM cliente WHERE curp=$1 RETURNING *', [curp]);
     return res.rows[0];
-  }
+}
 };
 
 module.exports = Cliente;
