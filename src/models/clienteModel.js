@@ -25,24 +25,20 @@ const clienteSchema = Joi.object({
     'string.base': 'El teléfono debe ser un texto',
     'string.max': 'El teléfono debe contener exactamente 10 dígitos'
   }),
-   curp: Joi.string().length(18).required().messages({
+  curp: Joi.string().length(18).required().messages({
     'any.required': 'La CURP es obligatoria',
     'string.length': 'La CURP debe tener 18 caracteres'
   }),
   clave_elector: Joi.string().length(20).allow(null, '').messages({
     'string.max': 'La Clave de Elector no debe exceder los 20 caracteres'
   }),
-
   doc_identificacion: Joi.string().allow(null, '').messages({
     'string.base': 'El documento de identificación debe ser una cadena de texto (ruta o URL)'
   }),
-
   doc_curp: Joi.string().allow(null, '').messages({
     'string.base': 'El documento de CURP debe ser una cadena de texto (ruta o URL)'
   }),
-
 });
-
 
 const Cliente = {
   validate: (data) => clienteSchema.validate(data),
@@ -63,30 +59,79 @@ const Cliente = {
   },
 
   create: async (data) => {
-    const { nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp} = data;
+    const { nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp } = data;
+
+    // 🔍 Validaciones de unicidad antes de insertar
+    const checks = [
+      { field: 'correo', value: correo },
+      { field: 'telefono', value: telefono },
+      { field: 'curp', value: curp },
+      { field: 'clave_elector', value: clave_elector }
+    ];
+
+    for (const check of checks) {
+      if (check.value) {
+        const query = `SELECT 1 FROM cliente WHERE ${check.field} = $1 LIMIT 1`;
+        const result = await pool.query(query, [check.value]);
+        if (result.rows.length > 0) {
+          throw new Error(`El ${check.field} '${check.value}' ya está registrado en otro cliente.`);
+        }
+      }
+    }
+
     const res = await pool.query(`
       INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `, [nombre, apellido_paterno, apellido_materno || null, correo, telefono || null, curp, clave_elector, doc_identificacion || null, doc_curp || null]);
+
     return res.rows[0];
   },
 
   update: async (curp, data) => {
+    // 🔍 Validaciones de unicidad antes de actualizar
+    const existing = await pool.query('SELECT * FROM cliente WHERE curp=$1', [curp]);
+    if (existing.rows.length === 0) {
+      throw new Error(`No existe un cliente con CURP '${curp}'`);
+    }
+
+    const checks = [
+      { field: 'correo', value: data.correo },
+      { field: 'telefono', value: data.telefono },
+      { field: 'curp', value: data.curp },
+      { field: 'clave_elector', value: data.clave_elector }
+    ];
+
+    for (const check of checks) {
+      if (check.value) {
+        const query = `SELECT 1 FROM cliente WHERE ${check.field} = $1 AND curp <> $2 LIMIT 1`;
+        const result = await pool.query(query, [check.value, curp]);
+        if (result.rows.length > 0) {
+          throw new Error(`El ${check.field} '${check.value}' ya está registrado en otro cliente.`);
+        }
+      }
+    }
+
     let fields = [], values = [], i = 1;
     for (const [key, value] of Object.entries(data)) {
       fields.push(`${key}=$${i++}`);
       values.push(value);
     }
+
     if (fields.length === 0) throw new Error("No hay datos válidos para actualizar");
-    const res = await pool.query(`UPDATE cliente SET ${fields.join(', ')} WHERE curp=$${i} RETURNING *`, [...values, curp]);
+
+    const res = await pool.query(
+      `UPDATE cliente SET ${fields.join(', ')} WHERE curp=$${i} RETURNING *`,
+      [...values, curp]
+    );
+
     return res.rows[0];
   },
 
   delete: async (curp) => {
     const res = await pool.query('DELETE FROM cliente WHERE curp=$1 RETURNING *', [curp]);
     return res.rows[0];
-}
+  }
 };
 
 module.exports = Cliente;
