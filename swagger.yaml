@@ -553,52 +553,86 @@ paths:
   # =========================
   # Pagos
   # =========================
-  /pagos/contrato/{id}:
+  /pagos/contrato:
     post:
       tags: [Pagos]
-      summary: Obtener pagos de un contrato usando JSON
+      summary: Obtener pagos de un cliente por correo usando JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - correo
               properties:
-                id_contrato:
-                  type: integer
+                correo:
+                  type: string
+                  example: cliente@gmail.com
       responses:
         "200":
-          description: Lista de pagos
+          description: Lista de pagos del cliente
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Pago"
+        "400":
+          description: Correo faltante
         "404":
-          description: Contrato no encontrado
-  /pagos/marcar-pagado/{id_pago}:
+          description: No se encontraron pagos
+
+  /pagos/marcar-pagado:
     put:
       tags: [Pagos]
-      summary: Marcar pago como pagado usando JSON
+      summary: Marcar el siguiente pago pendiente de un cliente como pagado usando su correo
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - correo
               properties:
-                id_pago:
-                  type: integer
+                correo:
+                  type: string
+                  description: Correo del cliente
                 metodo_pago:
                   type: string
+                  description: Método de pago (opcional, por defecto "efectivo")
       responses:
         "200":
-          description: Pago marcado como pagado
+          description: Pago actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  pago:
+                    $ref: '#/components/schemas/Pago'
         "404":
-          description: Pago no encontrado
+          description: No hay pagos pendientes para este cliente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: No hay pagos pendientes para este cliente
         "400":
-          description: Error al actualizar pago
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
 
 components:
   schemas:
