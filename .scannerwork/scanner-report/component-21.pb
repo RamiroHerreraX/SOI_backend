@@ -1,1 +1,1 @@
- 2jsXùhrsrc/models/loteModel.js
+ 2jsX’hrsrc/models/loteModel.js

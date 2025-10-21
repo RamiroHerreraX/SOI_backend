@@ -1,1 +1,1 @@
-- (2jsX‚hr tests/contratoController.test.js
+- (2jsX.hrtests/contratoRoutes.test.js
