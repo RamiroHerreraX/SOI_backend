@@ -114,11 +114,16 @@ exports.verifyOtp = async (req, res) => {
 };
 
 // =================== ENVIAR ENLACE RESET PASSWORD ===================
-// =================== ENVIAR ENLACE RESET PASSWORD ===================
+
+
 exports.sendResetLink = async (req, res) => {
   const { correo } = req.body;
 
+  // ✅ Validación de correo vacío
   if (!correo) return res.status(400).json({ msg: "Correo requerido" });
+
+  // ✅ Validación de formato de correo (ANTES del try)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(correo))
     return res.status(400).json({ msg: "Formato de correo inválido" });
 
@@ -126,10 +131,10 @@ exports.sendResetLink = async (req, res) => {
     const user = await User.getByEmail(correo);
     if (!user) return res.status(404).json({ msg: "Usuario no encontrado" });
 
-    // Generar token
+    // Generar token de reset
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Guardar token en archivo JSON
+    // Guardar token en archivo JSON temporal
     const resets = readOffline(resetTokensFile);
     resets.push({ correo, token, expires: Date.now() + 15 * 60 * 1000 });
     saveOffline(resetTokensFile, resets);
@@ -162,6 +167,7 @@ exports.sendResetLink = async (req, res) => {
 
 
 
+
 // =================== RESTABLECER CONTRASEÑA ===================
 exports.resetPassword = async (req, res) => {
   const { token } = req.params;
@@ -184,3 +190,71 @@ exports.resetPassword = async (req, res) => {
   saveOffline(resetTokensFile, resets.filter((r) => r.token !== token));
   res.json({ msg: "Contraseña actualizada correctamente" });
 };
+
+
+// Al final de src/controllers/authController.js
+if (process.env.NODE_ENV === "test") {
+  module.exports._otpStore = otpStore;
+  module.exports._resetTokensFile = resetTokensFile;
+}
+
+// ---------- PRUEBAS DE ERRORES (Ramas no cubiertas) ----------
+describe("💥 Pruebas de manejo de errores", () => {
+  test("Debe manejar error en envío de correo en sendResetLink", async () => {
+    const nodemailer = require("nodemailer");
+    const fakeTransport = {
+      sendMail: jest.fn().mockRejectedValue(new Error("Falla SMTP")),
+      verify: jest.fn((cb) => cb(null, true)),
+    };
+    nodemailer.createTransport.mockReturnValue(fakeTransport);
+
+    const User = require("../src/models/userModel");
+    User.getByEmail.mockResolvedValue({ correo: "user@test.com" });
+
+    const res = await request(app)
+      .post("/auth/send-reset-link")
+      .send({ correo: "user@test.com" });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.msg).toBe("Error enviando correo");
+  });
+
+  test("Debe rechazar OTP incorrecto", async () => {
+    const controller = require("../src/controllers/authController");
+    controller.otpStore = {
+      "user@test.com": { otp: "999999", expires: Date.now() + 10000 },
+    };
+
+    const res = await request(app)
+      .post("/auth/verify-otp")
+      .send({ correo: "user@test.com", otp: "123456" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.msg).toBe("Código OTP inválido");
+  });
+
+  test("Debe manejar error inesperado en verify-otp (try/catch)", async () => {
+    const controller = require("../src/controllers/authController");
+    // Forzamos un error manual en otpStore
+    controller.otpStore = null;
+
+    const res = await request(app)
+      .post("/auth/verify-otp")
+      .send({ correo: "user@test.com", otp: "123456" });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.msg).toBe("Error verificando OTP");
+  });
+
+  test("Debe manejar error inesperado en login", async () => {
+    const User = require("../src/models/userModel");
+    User.getByEmail.mockRejectedValue(new Error("DB Error"));
+
+    const res = await request(app)
+      .post("/auth/login")
+      .send({ correo: "user@test.com", password: "123456" });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.msg).toBe("Error en login");
+  });
+});
