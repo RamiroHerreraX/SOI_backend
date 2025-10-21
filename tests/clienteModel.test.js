@@ -1,4 +1,4 @@
-const Cliente = require('../src/models/cliente');
+const Cliente = require('../src/models/clienteModel');
 const pool = require('../src/db');
 
 jest.mock('../src/db', () => ({

@@ -1,1 +1,1 @@
-. (2jsX.hrtests/contratoRoutes.test.js
+. (2jsXEhrtests/contratoVenta.test.js

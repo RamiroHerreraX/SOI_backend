@@ -156,3 +156,10 @@ function phoneNormalizer(phone) {
   if (!phone) return null;
   return String(phone).trim();
 }
+
+module.exports = { 
+  obtenerContrato, 
+  createContrato, 
+  addMonthsPreserveDay, 
+  phoneNormalizer 
+};

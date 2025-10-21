@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.95% </span>
+                <span class="strong">72.9% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>142/192</span>
+                <span class='fraction'>148/203</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">65.71% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>24/36</span>
+                <span class='fraction'>23/35</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.95% </span>
+                <span class="strong">72.9% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>142/192</span>
+                <span class='fraction'>148/203</span>
             </div>
         
             
@@ -255,7 +255,18 @@
 <a name='L190'></a><a href='#L190'>190</a>
 <a name='L191'></a><a href='#L191'>191</a>
 <a name='L192'></a><a href='#L192'>192</a>
-<a name='L193'></a><a href='#L193'>193</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -284,6 +295,16 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -440,6 +461,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -479,10 +501,20 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false },
 });
 &nbsp;
-transporter.verify((error, success) =&gt; {
-  if (error) <span class="branch-0 cbranch-no" title="branch not covered" >console.error("Error transporter:", error);</span>
-  else console.log("Servidor SMTP listo para enviar emails");
-});
+// Solo verificar SMTP si no estamos en test
+if (process.env.NODE_ENV !== "test") <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >  transporter.verify((error, success) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (error) console.error("Error transporter:", error);</span>
+<span class="cstat-no" title="statement not covered" >    else console.log("Servidor SMTP listo para enviar emails");</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
+<span class="cstat-no" title="statement not covered" >}</span>
+&nbsp;
+// =================== EXPORTS PARA TEST ===================
+if (process.env.NODE_ENV === "test") {
+  module.exports._otpStore = otpStore;
+  module.exports._resetTokensFile = resetTokensFile;
+  module.exports._transporter = transporter;
+}
 &nbsp;
 // =================== LOGIN CON 2FA ===================
 exports.login = async (req, res) =&gt; {
@@ -490,29 +522,29 @@ exports.login = async (req, res) =&gt; {
     const { correo, password } = req.body;
 &nbsp;
     if (!correo || !password)
-      return res.json({ status: "fail", msg: "Correo y contraseña son requeridos" });
+      return res.status(400).json({ status: "fail", msg: "Correo y contraseña son requeridos" });
 &nbsp;
     if (!emailRegex.test(correo))
-      return res.json({ status: "fail", msg: "Formato de correo inválido" });
+      return res.status(400).json({ status: "fail", msg: "Formato de correo inválido" });
 &nbsp;
     const user = await User.getByEmail(correo);
-    if (!user) return res.json({ status: "fail", msg: "Usuario no encontrado" });
+    if (!user) return res.status(404).json({ status: "fail", msg: "Usuario no encontrado" });
 &nbsp;
     if (!loginAttempts[correo])
       loginAttempts[correo] = { intentos: 0, bloqueado: null };
 &nbsp;
     if (loginAttempts[correo].bloqueado<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; Date.now() &lt; loginAttempts[correo].bloqueado)</span>
-<span class="branch-0 cbranch-no" title="branch not covered" >      return res.json({ status: "fail", msg: "Usuario bloqueado temporalmente" });</span>
+<span class="branch-0 cbranch-no" title="branch not covered" >      return res.status(400).json({ status: "fail", msg: "Usuario bloqueado temporalmente" });</span>
 &nbsp;
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       loginAttempts[correo].intentos++;
       if (loginAttempts[correo].intentos &gt;= 5) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000; // 1 minuto</span>
+<span class="cstat-no" title="statement not covered" >        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000;</span>
 <span class="cstat-no" title="statement not covered" >        loginAttempts[correo].intentos = 0;</span>
-<span class="cstat-no" title="statement not covered" >        return res.json({ status: "fail", msg: "Usuario bloqueado por intentos fallidos" });</span>
+<span class="cstat-no" title="statement not covered" >        return res.status(400).json({ status: "fail", msg: "Usuario bloqueado por intentos fallidos" });</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
-      return res.json({ status: "fail", msg: "Contraseña incorrecta" });
+      return res.status(400).json({ status: "fail", msg: "Contraseña incorrecta" });
     }
 &nbsp;
     loginAttempts[correo].intentos = 0;
@@ -532,10 +564,10 @@ exports.login = async (req, res) =&gt; {
       html: `&lt;p&gt;Tu código es: &lt;b&gt;${otp}&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Válido por 5 minutos.&lt;/p&gt;`,
     });
 &nbsp;
-    res.json({ status: "success", msg: "Código 2FA enviado a tu correo" });
+    res.status(200).json({ status: "success", msg: "Código 2FA enviado a tu correo" });
   } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error("Error login:", err.message);</span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "error", msg: "Error en el servidor" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ status: "error", msg: "Error en el servidor" });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 };
 &nbsp;
@@ -545,12 +577,12 @@ exports.verifyOtp = async (req, res) =&gt; {
     const { correo, otp } = req.body;
 &nbsp;
     if (!correo || !otp)
-      return res.json({ status: "fail", msg: "Correo y OTP requeridos" });
+      return res.status(400).json({ status: "fail", msg: "Correo y OTP requeridos" });
 &nbsp;
     const record = otpStore[correo];
-    if (!record) <span class="branch-0 cbranch-no" title="branch not covered" >return res.json({ status: "fail", msg: "OTP no generado" });</span>
-    if (Date.now() &gt; record.expires) <span class="branch-0 cbranch-no" title="branch not covered" >return res.json({ status: "fail", msg: "OTP expirado" });</span>
-    if (otp !== record.otp) <span class="branch-0 cbranch-no" title="branch not covered" >return res.json({ status: "fail", msg: "OTP incorrecto" });</span>
+    if (!record) <span class="branch-0 cbranch-no" title="branch not covered" >return res.status(400).json({ status: "fail", msg: "OTP no generado" });</span>
+    if (Date.now() &gt; record.expires) <span class="branch-0 cbranch-no" title="branch not covered" >return res.status(400).json({ status: "fail", msg: "OTP expirado" });</span>
+    if (otp !== record.otp) <span class="branch-0 cbranch-no" title="branch not covered" >return res.status(400).json({ status: "fail", msg: "OTP incorrecto" });</span>
 &nbsp;
     delete otpStore[correo];
     const user = await User.getByEmail(correo);
@@ -561,10 +593,10 @@ exports.verifyOtp = async (req, res) =&gt; {
       { expiresIn: "1h" }
     );
 &nbsp;
-    res.json({ status: "success", msg: "Autenticación 2FA exitosa", token });
+    res.status(200).json({ status: "success", msg: "Autenticación 2FA exitosa", token });
   } <span class="branch-0 cbranch-no" title="branch not covered" >catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error("Error verifyOtp:", err.message);</span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "error", msg: "Error en el servidor" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ status: "error", msg: "Error en el servidor" });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 };
 &nbsp;
@@ -573,12 +605,12 @@ exports.sendResetLink = async (req, res) =&gt; {
   try {
     const { correo } = req.body;
 &nbsp;
-    if (!correo) return res.json({ status: "fail", msg: "Correo requerido" });
+    if (!correo) return res.status(400).json({ status: "fail", msg: "Correo requerido" });
     if (!emailRegex.test(correo))
-      return res.json({ status: "fail", msg: "Formato de correo inválido" });
+      return res.status(400).json({ status: "fail", msg: "Formato de correo inválido" });
 &nbsp;
     const user = await User.getByEmail(correo);
-    if (!user) return res.json({ status: "fail", msg: "Usuario no encontrado" })<span class="branch-0 cbranch-no" title="branch not covered" >;</span>
+    if (!user) return res.status(404).json({ status: "fail", msg: "Usuario no encontrado" })<span class="branch-0 cbranch-no" title="branch not covered" >;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    const token = crypto.randomBytes(32).toString("hex");</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -596,10 +628,10 @@ exports.sendResetLink = async (req, res) =&gt; {
 <span class="cstat-no" title="statement not covered" >             &lt;a href="${resetUrl}"&gt;${resetUrl}&lt;/a&gt;`,</span>
 <span class="cstat-no" title="statement not covered" >    });</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "success", msg: "Enlace de recuperación enviado" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(200).json({ status: "success", msg: "Enlace de recuperación enviado" });</span>
 <span class="cstat-no" title="statement not covered" >  } catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error("Error enviando correo:", err.message);</span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "error", msg: "Error enviando correo" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ status: "error", msg: "Error enviando correo" });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 };
 &nbsp;
@@ -610,16 +642,16 @@ exports.resetPassword = async (req, res) =&gt; {
     const { password } = req.body;
 &nbsp;
     if (!token || !password)
-<span class="branch-0 cbranch-no" title="branch not covered" >      return res.json({ status: "fail", msg: "Token y nueva contraseña requeridos" });</span>
+<span class="branch-0 cbranch-no" title="branch not covered" >      return res.status(400).json({ status: "fail", msg: "Token y nueva contraseña requeridos" });</span>
 &nbsp;
     if (password.length &lt; 6)
-      return res.json({ status: "fail", msg: "Contraseña muy corta" })<span class="branch-0 cbranch-no" title="branch not covered" >;</span>
+      return res.status(400).json({ status: "fail", msg: "Contraseña muy corta" })<span class="branch-0 cbranch-no" title="branch not covered" >;</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    const resets = readOffline(resetTokensFile);</span>
 <span class="cstat-no" title="statement not covered" >    const resetData = resets.find((r) =&gt; r.token === token);</span>
-<span class="cstat-no" title="statement not covered" >    if (!resetData) return res.json({ status: "fail", msg: "Token inválido" });</span>
+<span class="cstat-no" title="statement not covered" >    if (!resetData) return res.status(400).json({ status: "fail", msg: "Token inválido" });</span>
 <span class="cstat-no" title="statement not covered" >    if (Date.now() &gt; resetData.expires)</span>
-<span class="cstat-no" title="statement not covered" >      return res.json({ status: "fail", msg: "Token expirado" });</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(400).json({ status: "fail", msg: "Token expirado" });</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    const hashed = await bcrypt.hash(password, 10);</span>
 <span class="cstat-no" title="statement not covered" >    await User.updatePassword(resetData.correo, hashed);</span>
@@ -627,10 +659,10 @@ exports.resetPassword = async (req, res) =&gt; {
 <span class="cstat-no" title="statement not covered" >    // Eliminar token usado</span>
 <span class="cstat-no" title="statement not covered" >    saveOffline(resetTokensFile, resets.filter((r) =&gt; r.token !== token));</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "success", msg: "Contraseña actualizada correctamente" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(200).json({ status: "success", msg: "Contraseña actualizada correctamente" });</span>
 <span class="cstat-no" title="statement not covered" >  } catch (err) {</span>
 <span class="cstat-no" title="statement not covered" >    console.error("Error resetPassword:", err.message);</span>
-<span class="cstat-no" title="statement not covered" >    res.json({ status: "error", msg: "Error en el servidor" });</span>
+<span class="cstat-no" title="statement not covered" >    res.status(500).json({ status: "error", msg: "Error en el servidor" });</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 };
 &nbsp;
@@ -638,6 +670,7 @@ exports.resetPassword = async (req, res) =&gt; {
 if (process.env.NODE_ENV === "test") {
   module.exports._otpStore = otpStore;
   module.exports._resetTokensFile = resetTokensFile;
+  module.exports._transporter = transporter;
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -646,7 +679,7 @@ if (process.env.NODE_ENV === "test") {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-21T02:00:07.220Z
+                at 2025-10-21T02:53:29.888Z
             </div>
         <script src="../prettify.js"></script>
         <script>
