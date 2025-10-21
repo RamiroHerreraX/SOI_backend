@@ -2,5 +2,5 @@ projectKey=SOI_backend
 serverUrl=http://localhost:9000
 serverVersion=25.7.0.110598
 dashboardUrl=http://localhost:9000/dashboard?id=SOI_backend
-ceTaskId=ab6e60a1-b0f0-4791-9f2c-f29b2abfbeb7
-ceTaskUrl=http://localhost:9000/api/ce/task?id=ab6e60a1-b0f0-4791-9f2c-f29b2abfbeb7
+ceTaskId=854c2087-2cbe-4d91-847b-9850c981850d
+ceTaskUrl=http://localhost:9000/api/ce/task?id=854c2087-2cbe-4d91-847b-9850c981850d

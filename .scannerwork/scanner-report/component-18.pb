@@ -1,1 +1,1 @@
- 2jsXŠhrsrc/models/clienteModel.js
+ 2jsXhrsrc/db/index.js

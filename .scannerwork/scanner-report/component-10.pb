@@ -1,2 +1,2 @@
 
- 2jsXÁhr!src/controllers/authController.js
+ 2jsXhrsrc/config/config.js

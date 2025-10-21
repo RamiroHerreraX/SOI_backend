@@ -1,1 +1,1 @@
- 2jsXwhr!src/controllers/loteController.js
+ 2jsXŸhr*src/controllers/contratoVentaController.js

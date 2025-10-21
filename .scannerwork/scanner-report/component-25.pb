@@ -1,1 +1,1 @@
- 2jsXhrsrc/routes/clienteRoutes.js
+ 2jsXhrsrc/routes/authRoutes.js

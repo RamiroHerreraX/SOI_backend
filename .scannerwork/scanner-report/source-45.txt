@@ -1,46 +1,129 @@
-// tests/pagoRoutes.test.js
-const request = require('supertest');
-const express = require('express');
+const { obtenerContrato, createContrato } = require('../controllers/contratoController');
+const pool = require('../db');
+const ContratoVenta = require('../models/contratoModel');
+const Pago = require('../models/pagoModel');
 
-// Mock del controlador
-jest.mock('../src/controllers/pagoController', () => ({
-  getByContrato: jest.fn((req, res) => res.status(200).json({ message: 'Contrato encontrado' })),
-  marcarPagadoPorCorreo: jest.fn((req, res) => res.status(200).json({ message: 'Pago marcado como pagado' })),
-}));
+jest.mock('../db');
+jest.mock('../models/contratoModel');
+jest.mock('../models/pagoModel');
 
-const pagoController = require('../src/controllers/pagoController');
-const pagoRoutes = require('../src/routes/pagoRoutes');
+describe('Controlador Contrato', () => {
+  let req, res;
 
-describe('Rutas de pago', () => {
-  let app;
-
-  beforeAll(() => {
-    app = express();
-    app.use(express.json());
-    app.use('/api/pagos', pagoRoutes);
-  });
-
-  afterEach(() => {
+  beforeEach(() => {
+    req = { body: {}, params: {} };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    };
     jest.clearAllMocks();
   });
 
-  test('POST /api/pagos/contrato debe llamar pagoController.getByContrato', async () => {
-    const response = await request(app)
-      .post('/api/pagos/contrato')
-      .send({ contratoId: 123 });
+  // ===============================
+  // TEST obtenerContrato
+  // ===============================
+  it('debe obtener contratos correctamente', async () => {
+    const rows = [{ id_contrato: 1, cliente_nombre: 'Alejandra' }];
+    pool.query.mockResolvedValue({ rows });
 
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Contrato encontrado');
-    expect(pagoController.getByContrato).toHaveBeenCalledTimes(1);
+    await obtenerContrato(req, res);
+
+    expect(pool.query).toHaveBeenCalledTimes(1);
+    expect(res.json).toHaveBeenCalledWith(rows);
   });
 
-  test('PUT /api/pagos/marcar-pagado debe llamar pagoController.marcarPagadoPorCorreo', async () => {
-    const response = await request(app)
-      .put('/api/pagos/marcar-pagado')
-      .send({ correo: 'test@example.com' });
+  // ===============================
+  // TEST createContrato con datos válidos
+  // ===============================
+  it('debe crear un contrato correctamente', async () => {
+    req.body = {
+      id_lote: 1,
+      id_cliente: 2,
+      precio_total: 100000,
+      enganche: 10000,
+      plazo_meses: 10
+    };
 
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Pago marcado como pagado');
-    expect(pagoController.marcarPagadoPorCorreo).toHaveBeenCalledTimes(1);
+    const fakeClient = {
+      query: jest.fn(),
+      release: jest.fn()
+    };
+
+    // Simular que el lote existe y está disponible
+    fakeClient.query
+      .mockResolvedValueOnce({ rowCount: 1, rows: [{ id_propiedad: 1, estado_propiedad: 'disponible' }] }) // Lote OK
+      .mockResolvedValueOnce({ rowCount: 1 }); // UPDATE OK
+
+    pool.connect.mockResolvedValue(fakeClient);
+
+    ContratoVenta.validate = jest.fn().mockReturnValue({ error: null });
+    ContratoVenta.createContractRecord = jest.fn().mockResolvedValue({ id_contrato: 99 });
+    Pago.createBulk = jest.fn().mockResolvedValue([{ id_pago: 1 }]);
+
+    await createContrato(req, res);
+
+    expect(ContratoVenta.createContractRecord).toHaveBeenCalled();
+    expect(Pago.createBulk).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      contrato: { id_contrato: 99 },
+      mensualidad: expect.any(Number),
+      pagos: expect.any(Array)
+    }));
+  });
+
+  // ===============================
+  // TEST createContrato con enganche inválido
+  // ===============================
+  it('debe retornar error si enganche >= precio_total', async () => {
+    req.body = { precio_total: 10000, enganche: 10000 };
+    ContratoVenta.validate = jest.fn().mockReturnValue({ error: null });
+
+    await createContrato(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('enganche')
+    }));
+  });
+
+  // ===============================
+  // TEST createContrato con lote inexistente
+  // ===============================
+  it('debe retornar error si lote no encontrado', async () => {
+    req.body = { id_lote: 1, id_cliente: 2, precio_total: 10000, enganche: 1000, plazo_meses: 5 };
+
+    const fakeClient = {
+      query: jest.fn().mockResolvedValueOnce({ rowCount: 0 }),
+      release: jest.fn()
+    };
+    pool.connect.mockResolvedValue(fakeClient);
+    ContratoVenta.validate = jest.fn().mockReturnValue({ error: null });
+
+    await createContrato(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Lote no encontrado'
+    }));
+  });
+
+  // ===============================
+  // TEST helper addMonthsPreserveDay
+  // ===============================
+  it('debe agregar meses correctamente incluso en meses cortos', () => {
+    const { addMonthsPreserveDay } = require('../controllers/contratoController');
+    const d = new Date('2024-01-31');
+    const result = addMonthsPreserveDay(d, 1);
+    expect(result.getMonth()).toBe(1); // febrero
+  });
+
+  // ===============================
+  // TEST phoneNormalizer
+  // ===============================
+  it('debe normalizar teléfono correctamente', () => {
+    const { phoneNormalizer } = require('../controllers/contratoController');
+    expect(phoneNormalizer(' 123 ')).toBe('123');
+    expect(phoneNormalizer(null)).toBeNull();
   });
 });

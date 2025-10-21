@@ -1,118 +1,158 @@
-const Lote = require('../models/loteModel');
+const pool = require('../db');
+const Cliente = require('../models/clienteModel');
+const ContratoVenta = require('../models/contratoModel');
+const Pago = require('../models/pagoModel');
 
-const asyncHandler = fn => (req, res, next) => {
-  Promise.resolve(fn(req,res,next)).catch(next);
-};
+const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req,res,next)).catch(next);
 
-exports.getAllLotes = asyncHandler(async (req,res)=>{
-  const lotes = await Lote.getAll();
-  res.json(lotes);
+// Helper: sumar meses manteniendo mismo día (si el mes resultante no tiene día, usa último día del mes)
+function addMonthsPreserveDay(date, months) {
+  const d = new Date(date);
+  const day = d.getDate();
+  const targetMonth = d.getMonth() + months;
+  const result = new Date(d.getFullYear(), targetMonth, 1);
+  // set to desired day or last day of month
+  const daysInMonth = new Date(result.getFullYear(), result.getMonth()+1, 0).getDate();
+  result.setDate(Math.min(day, daysInMonth));
+  return result;
+}
+
+exports.obtenerContrato = asyncHandler(async (req, res) => {
+  const query = `
+    SELECT cv.*, 
+           c.nombre AS cliente_nombre, c.apellido_paterno, c.apellido_materno, c.correo, c.telefono,
+           l.tipo AS lote_tipo, l.numlote, l.direccion
+    FROM contrato_venta cv
+    INNER JOIN cliente c ON cv.id_cliente = c.id_cliente
+    INNER JOIN lote l ON cv.id_lote = l.id_propiedad
+    ORDER BY cv.fecha_contrato DESC
+  `;
+
+  const result = await pool.query(query);
+  res.json(result.rows);
 });
 
-exports.getLoteById = asyncHandler(async (req,res)=>{
-  const lote = await Lote.getById(req.params.id);
-  if(!lote) return res.status(404).json({message:"Lote no encontrado"});
-  res.json(lote);
-});
 
-exports.createLote = asyncHandler(async (req, res) => {
+exports.createContrato = asyncHandler(async (req, res) => {
+  // validar input
+  const { error } = ContratoVenta.validate(req.body);
+  if (error) return res.status(400).json({ mensaje: 'Error de validación', detalles: [error.details[0].message] });
+
+  const {
+    id_lote,
+    id_cliente,
+    correo_cliente,
+    precio_total,
+    enganche,
+    plazo_meses,
+    estado_contrato = 'activo',
+    nombre, apellido_paterno, apellido_materno, telefono
+  } = req.body;
+
+  if (parseFloat(enganche) >= parseFloat(precio_total)) {
+    return res.status(400).json({ message: 'El enganche debe ser menor que el precio total' });
+  }
+
+  const client = await pool.connect();
   try {
-    const { error } = loteSchema.validate(req.body, { abortEarly: false });
-    if (error) {
-      return res.status(400).json({
-        mensaje: "Errores de validación",
-        detalles: error.details.map(err => err.message)
+    await client.query('BEGIN');
+
+    // 1) Verificar lote y que esté disponible
+    const loteRes = await client.query('SELECT id_propiedad, estado_propiedad FROM lote WHERE id_propiedad=$1 FOR UPDATE', [id_lote]);
+    if (loteRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Lote no encontrado' });
+    }
+    const lote = loteRes.rows[0];
+    if (lote.estado_propiedad !== 'disponible') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: `Lote no disponible (estado actual: ${lote.estado_propiedad})` });
+    }
+
+    // Cliente: si id_cliente dado, comprobar existencia; si no, buscar por correo; si no existe y vienen datos, crear
+    let finalClienteId = id_cliente ? parseInt(id_cliente) : null;
+    if (finalClienteId) {
+      const clienteExist = await client.query('SELECT id_cliente FROM cliente WHERE id_cliente=$1', [finalClienteId]);
+      if (clienteExist.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Cliente indicado no existe' });
+      }
+    } else if (correo_cliente) {
+      // buscar por correo
+      const existeCorreo = await client.query('SELECT id_cliente FROM cliente WHERE correo=$1', [correo_cliente]);
+      if (existeCorreo.rowCount > 0) {
+        finalClienteId = existeCorreo.rows[0].id_cliente;
+      } else {
+        // crear cliente si vienen datos mínimos
+        if (!nombre || !apellido_paterno) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'No existe cliente y faltan datos para crearlo (nombre/apellido_paterno)' });
+        }
+        const insertCli = await client.query(
+          `INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono)
+           VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+          [nombre, apellido_paterno, apellido_materno || null, correo_cliente, phoneNormalizer(telefono)]
+        );
+        finalClienteId = insertCli.rows[0].id_cliente;
+      }
+    } else {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'Debe proporcionar id_cliente o correo_cliente con datos para crear cliente' });
+    }
+
+    // Crear contrato
+    const precioNum = parseFloat(precio_total);
+    const engancheNum = parseFloat(enganche);
+    const plazoNum = parseInt(plazo_meses, 10);
+
+    const contrato = await ContratoVenta.createContractRecord(client, {
+      id_lote,
+      id_cliente: finalClienteId,
+      precio_total: precioNum,
+      enganche: engancheNum,
+      plazo_meses: plazoNum,
+      estado_contrato
+    });
+
+    // Calcular mensualidad (redondeo a 2 decimales)
+    const mensualidad = parseFloat(((precioNum - engancheNum) / plazoNum).toFixed(2));
+
+    // Generar pagos mismos día
+    const pagos = [];
+    const contratoDate = new Date(); // fecha inicio (hoy)
+    for (let i = 1; i <= plazoNum; i++) {
+      const fechaPago = addMonthsPreserveDay(contratoDate, i); // primer pago = +1 mes
+      pagos.push({
+        id_contrato: contrato.id_contrato,
+        numero_pago: i,
+        monto: mensualidad,
+        fecha_pago: fechaPago.toISOString().split('T')[0], // DATE format YYYY-MM-DD
+        metodo_pago: 'pendiente',
+        estado_pago: 'pendiente'
       });
     }
-    const data = { ...req.body };
 
-    if (req.file) {
-      // Guardar la ruta de la imagen en el objeto data
-      data.imagen = `/uploads/${req.file.filename}`;
-    } else {
-      data.imagen = null;
-    }
+    // Insertar pagos
+    const pagosCreados = await Pago.createBulk(client, pagos);
 
-    const lote = await Lote.create(data);
-    res.status(201).json(lote);
+    // Actualizar estado del lote a "en proceso" (o 'vendida' si prefieres)
+    await client.query('UPDATE lote SET estado_propiedad=$1 WHERE id_propiedad=$2', ['en proceso', id_lote]);
+
+    await client.query('COMMIT');
+
+    // Responder con contrato y pagos creados
+    res.status(201).json({ contrato, mensualidad, pagos: pagosCreados });
   } catch (err) {
-    console.error('Error createLote:', err.message || err);
-    res.status(400).json({ error: err.message || 'Error al crear el lote (backend)' });
+    await client.query('ROLLBACK');
+    console.error('Error crear contrato:', err);
+    res.status(500).json({ message: 'Error al crear contrato', error: err.message });
+  } finally {
+    client.release();
   }
 });
 
-// Obtener lote por numLote+manzana (terreno) o direccion (otros)
-// Obtener lote por numLote+manzana o direccion según tipo
-exports.getLote = asyncHandler(async (req, res) => {
-  const { tipo, numLote, manzana, direccion } = req.query;
-
-  if (!tipo) return res.status(400).json({ status: "fail", msg: "El campo tipo es obligatorio" });
-
-  let lote;
-  if (tipo.toLowerCase() === "terreno") {
-    if (!numLote) return res.status(400).json({ status: "fail", msg: "numLote es obligatorio para terrenos" });
-    lote = await Lote.getByNumLoteManzana(numLote, manzana || null);
-  } else {
-    if (!direccion) return res.status(400).json({ status: "fail", msg: "direccion es obligatoria para este tipo" });
-    lote = await Lote.getByDireccion(direccion);
-  }
-
-  if (!lote) return res.status(404).json({ status: "fail", msg: "Lote no encontrado" });
-
-  res.status(200).json({ status: "success", lote });
-});
-
-// Actualizar lote por numLote+manzana o direccion
-exports.updateLoteByQuery = asyncHandler(async (req, res) => {
-  const { tipo, numLote, manzana, direccion } = req.query;
-  let lote;
-
-  if (tipo.toLowerCase() === "terreno") {
-    lote = await Lote.getByNumLoteManzana(numLote, manzana || null);
-  } else {
-    lote = await Lote.getByDireccion(direccion);
-  }
-
-  if (!lote) return res.status(404).json({ status: "fail", msg: "Lote no encontrado" });
-
-  const data = { ...req.body };
-  if (req.file) data.imagen = `/uploads/${req.file.filename}`;
-
-  const updatedLote = await Lote.update(lote.id_propiedad, data);
-  res.status(200).json({ status: "success", lote: updatedLote });
-});
-
-// Eliminar lote por numLote+manzana o direccion
-exports.deleteLoteByQuery = asyncHandler(async (req, res) => {
-  const { tipo, numLote, manzana, direccion } = req.query;
-  let lote;
-
-  if (tipo.toLowerCase() === "terreno") {
-    lote = await Lote.getByNumLoteManzana(numLote, manzana || null);
-  } else {
-    lote = await Lote.getByDireccion(direccion);
-  }
-
-  if (!lote) return res.status(404).json({ status: "fail", msg: "Lote no encontrado" });
-
-  const deletedLote = await Lote.delete(lote.id_propiedad);
-  res.status(200).json({ status: "success", lote: deletedLote });
-});
-
-
-
-
-exports.updateLote = asyncHandler(async (req,res)=>{
-  const data = { ...req.body };
-  if (req.file) {
-    data.imagen = `/uploads/${req.file.filename}`;
-  }
-  const lote = await Lote.update(req.params.id, data);
-  res.json(lote);
-});
-
-
-exports.deleteLote = asyncHandler(async (req,res)=>{
-  const lote = await Lote.delete(req.params.id);
-  res.json(lote);
-});
+// optional helper to normalize phone (simple)
+function phoneNormalizer(phone) {
+  if (!phone) return null;
+  return String(phone).trim();
+}

@@ -1,1 +1,1 @@
- 2jsXIhr!src/controllers/pagoController.js
+ 2jsXwhr!src/controllers/loteController.js

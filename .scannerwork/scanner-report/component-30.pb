@@ -1,1 +1,1 @@
- 2jsXhrsrc/routes/userRoutes.js
+ 2jsXhrsrc/routes/ubicacionRoutes.js

@@ -1,1 +1,1 @@
- 2jsX/hr!src/controllers/userController.js
+ 2jsX‰hr&src/controllers/ubicacionController.js

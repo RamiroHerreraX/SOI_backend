@@ -1,1 +1,1 @@
- 2jsX	hrsrc/routes/pagosRoutes.js
+ 2jsX hrsrc/routes/loteRoutes.js

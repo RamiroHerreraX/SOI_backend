@@ -1,1 +1,1 @@
- 2jsXùhrsrc/models/loteModel.js
+ 2jsXRhrsrc/models/contratoModel.js

@@ -1,1 +1,1 @@
- 2jsX‰hr&src/controllers/ubicacionController.js
+ 2jsXIhr!src/controllers/pagoController.js

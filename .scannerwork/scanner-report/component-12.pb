@@ -1,1 +1,1 @@
- 2jsXŸhr*src/controllers/contratoVentaController.js
+ 2jsXZhr$src/controllers/clienteController.js

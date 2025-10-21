@@ -3,3 +3,4 @@ sonar-project.properties
 # Coverage reports
 coverage/
 coverage/lcov-report/
+.scannerwork
