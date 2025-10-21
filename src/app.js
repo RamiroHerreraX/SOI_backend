@@ -2,18 +2,17 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-
-dotenv.config();
-const app = express();
-const port = process.env.PORT || 3000;
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 
-// Permitir todos los orígenes en desarrollo
+dotenv.config();
+const app = express();
+
+// CORS
 app.use(cors({
-  origin: '*', // mientras pruebas
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
@@ -26,13 +25,10 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const userRoutes = require('./routes/userRoutes');
 const loteRoutes = require('./routes/loteRoutes');
 const ubicacionRoutes = require('./routes/ubicacionRoutes');
-
 const clientesRouter = require('./routes/clienteRoutes');
 const contratosRouter = require('./routes/contratoRoutes');
 const pagosRouter = require('./routes/pagosRoutes');
-
 const authRoutes = require('./routes/authRoutes');
-//  -->>>>>>> 0cb14de (Contraseñas y login completo)
 
 app.use('/api/users', userRoutes);
 app.use('/api/lotes', loteRoutes);
@@ -48,11 +44,10 @@ app.get('/', (req, res) => {
   res.send("Backend con NodeJS - Express + CRUD API REST + PostgreSQL");
 });
 
-// Middleware global de manejo de errores
+// Middleware global de errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: err.message });
 });
 
-// Servidor
-app.listen(port, () => console.log(`Servidor corriendo en puerto ${port}`));
+module.exports = app;

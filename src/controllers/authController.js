@@ -30,10 +30,20 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false },
 });
 
-transporter.verify((error, success) => {
-  if (error) console.error("Error transporter:", error);
-  else console.log("Servidor SMTP listo para enviar emails");
-});
+// Solo verificar SMTP si no estamos en test
+if (process.env.NODE_ENV !== "test") {
+  transporter.verify((error, success) => {
+    if (error) console.error("Error transporter:", error);
+    else console.log("Servidor SMTP listo para enviar emails");
+  });
+}
+
+// =================== EXPORTS PARA TEST ===================
+if (process.env.NODE_ENV === "test") {
+  module.exports._otpStore = otpStore;
+  module.exports._resetTokensFile = resetTokensFile;
+  module.exports._transporter = transporter;
+}
 
 // =================== LOGIN CON 2FA ===================
 exports.login = async (req, res) => {
@@ -41,29 +51,29 @@ exports.login = async (req, res) => {
     const { correo, password } = req.body;
 
     if (!correo || !password)
-      return res.json({ status: "fail", msg: "Correo y contraseña son requeridos" });
+      return res.status(400).json({ status: "fail", msg: "Correo y contraseña son requeridos" });
 
     if (!emailRegex.test(correo))
-      return res.json({ status: "fail", msg: "Formato de correo inválido" });
+      return res.status(400).json({ status: "fail", msg: "Formato de correo inválido" });
 
     const user = await User.getByEmail(correo);
-    if (!user) return res.json({ status: "fail", msg: "Usuario no encontrado" });
+    if (!user) return res.status(404).json({ status: "fail", msg: "Usuario no encontrado" });
 
     if (!loginAttempts[correo])
       loginAttempts[correo] = { intentos: 0, bloqueado: null };
 
     if (loginAttempts[correo].bloqueado && Date.now() < loginAttempts[correo].bloqueado)
-      return res.json({ status: "fail", msg: "Usuario bloqueado temporalmente" });
+      return res.status(400).json({ status: "fail", msg: "Usuario bloqueado temporalmente" });
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       loginAttempts[correo].intentos++;
       if (loginAttempts[correo].intentos >= 5) {
-        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000; // 1 minuto
+        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000;
         loginAttempts[correo].intentos = 0;
-        return res.json({ status: "fail", msg: "Usuario bloqueado por intentos fallidos" });
+        return res.status(400).json({ status: "fail", msg: "Usuario bloqueado por intentos fallidos" });
       }
-      return res.json({ status: "fail", msg: "Contraseña incorrecta" });
+      return res.status(400).json({ status: "fail", msg: "Contraseña incorrecta" });
     }
 
     loginAttempts[correo].intentos = 0;
@@ -83,10 +93,10 @@ exports.login = async (req, res) => {
       html: `<p>Tu código es: <b>${otp}</b></p><p>Válido por 5 minutos.</p>`,
     });
 
-    res.json({ status: "success", msg: "Código 2FA enviado a tu correo" });
+    res.status(200).json({ status: "success", msg: "Código 2FA enviado a tu correo" });
   } catch (err) {
     console.error("Error login:", err.message);
-    res.json({ status: "error", msg: "Error en el servidor" });
+    res.status(500).json({ status: "error", msg: "Error en el servidor" });
   }
 };
 
@@ -96,12 +106,12 @@ exports.verifyOtp = async (req, res) => {
     const { correo, otp } = req.body;
 
     if (!correo || !otp)
-      return res.json({ status: "fail", msg: "Correo y OTP requeridos" });
+      return res.status(400).json({ status: "fail", msg: "Correo y OTP requeridos" });
 
     const record = otpStore[correo];
-    if (!record) return res.json({ status: "fail", msg: "OTP no generado" });
-    if (Date.now() > record.expires) return res.json({ status: "fail", msg: "OTP expirado" });
-    if (otp !== record.otp) return res.json({ status: "fail", msg: "OTP incorrecto" });
+    if (!record) return res.status(400).json({ status: "fail", msg: "OTP no generado" });
+    if (Date.now() > record.expires) return res.status(400).json({ status: "fail", msg: "OTP expirado" });
+    if (otp !== record.otp) return res.status(400).json({ status: "fail", msg: "OTP incorrecto" });
 
     delete otpStore[correo];
     const user = await User.getByEmail(correo);
@@ -112,10 +122,10 @@ exports.verifyOtp = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({ status: "success", msg: "Autenticación 2FA exitosa", token });
+    res.status(200).json({ status: "success", msg: "Autenticación 2FA exitosa", token });
   } catch (err) {
     console.error("Error verifyOtp:", err.message);
-    res.json({ status: "error", msg: "Error en el servidor" });
+    res.status(500).json({ status: "error", msg: "Error en el servidor" });
   }
 };
 
@@ -124,12 +134,12 @@ exports.sendResetLink = async (req, res) => {
   try {
     const { correo } = req.body;
 
-    if (!correo) return res.json({ status: "fail", msg: "Correo requerido" });
+    if (!correo) return res.status(400).json({ status: "fail", msg: "Correo requerido" });
     if (!emailRegex.test(correo))
-      return res.json({ status: "fail", msg: "Formato de correo inválido" });
+      return res.status(400).json({ status: "fail", msg: "Formato de correo inválido" });
 
     const user = await User.getByEmail(correo);
-    if (!user) return res.json({ status: "fail", msg: "Usuario no encontrado" });
+    if (!user) return res.status(404).json({ status: "fail", msg: "Usuario no encontrado" });
 
     const token = crypto.randomBytes(32).toString("hex");
 
@@ -147,10 +157,10 @@ exports.sendResetLink = async (req, res) => {
              <a href="${resetUrl}">${resetUrl}</a>`,
     });
 
-    res.json({ status: "success", msg: "Enlace de recuperación enviado" });
+    res.status(200).json({ status: "success", msg: "Enlace de recuperación enviado" });
   } catch (err) {
     console.error("Error enviando correo:", err.message);
-    res.json({ status: "error", msg: "Error enviando correo" });
+    res.status(500).json({ status: "error", msg: "Error enviando correo" });
   }
 };
 
@@ -161,16 +171,16 @@ exports.resetPassword = async (req, res) => {
     const { password } = req.body;
 
     if (!token || !password)
-      return res.json({ status: "fail", msg: "Token y nueva contraseña requeridos" });
+      return res.status(400).json({ status: "fail", msg: "Token y nueva contraseña requeridos" });
 
     if (password.length < 6)
-      return res.json({ status: "fail", msg: "Contraseña muy corta" });
+      return res.status(400).json({ status: "fail", msg: "Contraseña muy corta" });
 
     const resets = readOffline(resetTokensFile);
     const resetData = resets.find((r) => r.token === token);
-    if (!resetData) return res.json({ status: "fail", msg: "Token inválido" });
+    if (!resetData) return res.status(400).json({ status: "fail", msg: "Token inválido" });
     if (Date.now() > resetData.expires)
-      return res.json({ status: "fail", msg: "Token expirado" });
+      return res.status(400).json({ status: "fail", msg: "Token expirado" });
 
     const hashed = await bcrypt.hash(password, 10);
     await User.updatePassword(resetData.correo, hashed);
@@ -178,10 +188,10 @@ exports.resetPassword = async (req, res) => {
     // Eliminar token usado
     saveOffline(resetTokensFile, resets.filter((r) => r.token !== token));
 
-    res.json({ status: "success", msg: "Contraseña actualizada correctamente" });
+    res.status(200).json({ status: "success", msg: "Contraseña actualizada correctamente" });
   } catch (err) {
     console.error("Error resetPassword:", err.message);
-    res.json({ status: "error", msg: "Error en el servidor" });
+    res.status(500).json({ status: "error", msg: "Error en el servidor" });
   }
 };
 
@@ -189,4 +199,5 @@ exports.resetPassword = async (req, res) => {
 if (process.env.NODE_ENV === "test") {
   module.exports._otpStore = otpStore;
   module.exports._resetTokensFile = resetTokensFile;
+  module.exports._transporter = transporter;
 }
