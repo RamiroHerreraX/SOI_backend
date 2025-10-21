@@ -1,6 +1,5 @@
 const pool = require('../db');
 
-// ✅ Obtener todos los estados
 const getEstados = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM estado ORDER BY nombre_estado');
@@ -14,7 +13,6 @@ const getEstados = async (req, res) => {
   }
 };
 
-// ✅ Obtener ciudades por estado (con validación)
 const getCiudades = async (req, res) => {
   const { estadoId } = req.params;
 
@@ -40,7 +38,6 @@ const getCiudades = async (req, res) => {
   }
 };
 
-// ✅ Obtener colonias por ciudad (con validación)
 const getColonias = async (req, res) => {
   const { ciudadId } = req.params;
 
@@ -65,7 +62,6 @@ const getColonias = async (req, res) => {
   }
 };
 
-// ✅ Buscar ciudad y colonias por código postal (ya validado)
 const getCiudadPorCP = async (req, res) => {
   const { codigoPostal } = req.params;
   try {
@@ -111,7 +107,6 @@ const getCiudadPorCP = async (req, res) => {
   }
 };
 
-// ✅ Obtener ciudad por ID
 const getCiudadById = async (req, res) => {
   const { id_ciudad } = req.params;
 
