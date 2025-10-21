@@ -1,2 +1,0 @@
-SOI_backend :%.46
--+3,10*/	25B84https://github.com/RamiroHerreraX/SOI_backend#readmeB84https://github.com/RamiroHerreraX/SOI_backend/issuesB95git+https://github.com/RamiroHerreraX/SOI_backend.gitRSOI_backend
