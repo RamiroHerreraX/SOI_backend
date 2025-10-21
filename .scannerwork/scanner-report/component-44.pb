@@ -1,0 +1,1 @@
+, (2jsXhrtests/contrato.test.js
