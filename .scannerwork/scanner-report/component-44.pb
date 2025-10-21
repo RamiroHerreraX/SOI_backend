@@ -1,1 +1,1 @@
-, (2jsXhrtests/contrato.test.js
+, (2jsXMhrtests/clienteModel.test.js

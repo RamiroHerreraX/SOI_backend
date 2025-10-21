@@ -1,1 +1,1 @@
- 2jsXÌhr!src/controllers/authController.js
+ 2jsXÌhr!src/controllers/authController.js
