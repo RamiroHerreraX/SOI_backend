@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: API Inmobiliaria INDES
-  description: Documentación de los endpoints para gestión de Lotes, Usuarios y Autenticación
+  description: Documentación de los endpoints para gestión de Lotes, Usuarios, Autenticación, Clientes, Contratos y Pagos
   version: "1.0.0"
 
 servers:
@@ -15,8 +15,19 @@ tags:
     description: Endpoints para gestión de usuarios
   - name: Autenticación
     description: Endpoints para login, verificación 2FA y recuperación de contraseña
+  - name: Ubicaciones
+    description: Endpoints para obtener Estados, Ciudades y Colonias
+  - name: Clientes
+    description: Endpoints para gestión de clientes
+  - name: Contratos
+    description: Endpoints para gestión de contratos de venta
+  - name: Pagos
+    description: Endpoints para gestión de pagos
 
 paths:
+  # =========================
+  # Lotes
+  # =========================
   /lotes:
     get:
       tags: [Lotes]
@@ -30,7 +41,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Lote"
-
     post:
       tags: [Lotes]
       summary: Crear un nuevo lote
@@ -46,65 +56,84 @@ paths:
         "400":
           description: Error al crear lote
 
-  /lotes/{id}:
-    get:
-      tags: [Lotes]
-      summary: Obtener un lote por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Lote encontrado
-        "404":
-          description: Lote no encontrado
-
+  /lotes/actualizar:
     put:
       tags: [Lotes]
-      summary: Actualizar un lote por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Actualizar lote usando JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Lote"
+              type: object
+              properties:
+                filtro:
+                  type: object
+                  description: Parámetros para buscar el lote a actualizar
+                  properties:
+                    tipo:
+                      type: string
+                    numLote:
+                      type: string
+                      nullable: true
+                    manzana:
+                      type: string
+                      nullable: true
+                    direccion:
+                      type: string
+                      nullable: true
+                datos:
+                  $ref: "#/components/schemas/Lote"
       responses:
         "200":
           description: Lote actualizado
-        "400":
-          description: Error al actualizar lote
+        "404":
+          description: Lote no encontrado
 
+  /lotes/eliminar:
     delete:
       tags: [Lotes]
-      summary: Eliminar un lote por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Eliminar lote usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tipo:
+                  type: string
+                numLote:
+                  type: string
+                  nullable: true
+                manzana:
+                  type: string
+                  nullable: true
+                direccion:
+                  type: string
+                  nullable: true
       responses:
         "200":
           description: Lote eliminado
+        "404":
+          description: Lote no encontrado
 
+  # =========================
+  # Usuarios
+  # =========================
   /users:
     get:
       tags: [Usuarios]
-      summary: Obtener todos los usuarios o filtrar por rol
-      parameters:
-        - name: rol
-          in: query
-          schema:
-            type: string
+      summary: Obtener usuarios filtrando por JSON
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rol:
+                  type: string
       responses:
         "200":
           description: Lista de usuarios
@@ -114,7 +143,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
-
     post:
       tags: [Usuarios]
       summary: Crear un nuevo usuario
@@ -130,57 +158,45 @@ paths:
         "400":
           description: Error de validación
 
-  /users/{id}:
-    get:
-      tags: [Usuarios]
-      summary: Obtener un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Usuario encontrado
-        "404":
-          description: Usuario no encontrado
-
+  /users/actualizar:
     put:
       tags: [Usuarios]
-      summary: Actualizar un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Actualizar usuario usando JSON
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              type: object
+              properties:
+                id:
+                  type: integer
+                datos:
+                  $ref: "#/components/schemas/User"
       responses:
         "200":
           description: Usuario actualizado
 
+  /users/eliminar:
     delete:
       tags: [Usuarios]
-      summary: Eliminar un usuario por ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Eliminar usuario usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
       responses:
         "200":
           description: Usuario eliminado
 
-  # ============================
-  # 🔐 AUTENTICACIÓN
-  # ============================
+  # =========================
+  # Autenticación
+  # =========================
   /auth/login:
     post:
       tags: [Autenticación]
@@ -191,6 +207,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - correo
+                - password
               properties:
                 correo:
                   type: string
@@ -205,13 +224,16 @@ paths:
   /auth/verify-otp:
     post:
       tags: [Autenticación]
-      summary: Verifica el código OTP recibido por correo
+      summary: Verifica el código OTP
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - correo
+                - otp
               properties:
                 correo:
                   type: string
@@ -231,6 +253,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - correo
               properties:
                 correo:
                   type: string
@@ -238,16 +262,51 @@ paths:
         "200":
           description: Enlace enviado
 
-  /auth/reset/{token}:
+  /auth/reset:
     post:
       tags: [Autenticación]
-      summary: Restablecer la contraseña usando token
-      parameters:
-        - in: path
-          name: token
-          required: true
-          schema:
-            type: string
+      summary: Restablecer contraseña usando token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+
+  # =========================
+  # Ubicaciones
+  # =========================
+  /estados:
+    get:
+      tags: [Ubicaciones]
+      summary: Obtener todos los estados
+      responses:
+        "200":
+          description: Lista de estados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_estado:
+                      type: integer
+                    nombre_estado:
+                      type: string
+
+  /ciudades:
+    post:
+      tags: [Ubicaciones]
+      summary: Obtener ciudades filtrando por JSON
       requestBody:
         required: true
         content:
@@ -255,11 +314,325 @@ paths:
             schema:
               type: object
               properties:
-                password:
+                id_estado:
+                  type: integer
+      responses:
+        "200":
+          description: Lista de ciudades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_ciudad:
+                      type: integer
+                    nombre_ciudad:
+                      type: string
+                    id_estado:
+                      type: integer
+
+  /colonias:
+    post:
+      tags: [Ubicaciones]
+      summary: Obtener colonias filtrando por JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_ciudad:
+                  type: integer
+      responses:
+        "200":
+          description: Lista de colonias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_colonia:
+                      type: integer
+                    nombre_colonia:
+                      type: string
+                    id_ciudad:
+                      type: integer
+
+  /codigo-postal:
+    post:
+      tags: [Ubicaciones]
+      summary: Buscar ciudad y colonias por código postal usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codigo_postal:
                   type: string
       responses:
         "200":
-          description: Contraseña actualizada
+          description: Resultados del código postal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_estado:
+                    type: integer
+                  nombre_estado:
+                    type: string
+                  id_ciudad:
+                    type: integer
+                  nombre_ciudad:
+                    type: string
+                  colonias:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_colonia:
+                          type: integer
+                        nombre_colonia:
+                          type: string
+                        codigo_postal:
+                          type: string
+
+  # =========================
+  # Clientes
+  # =========================
+  /clientes:
+    get:
+      tags: [Clientes]
+      summary: Obtener todos los clientes
+      responses:
+        "200":
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cliente"
+
+    post:
+      tags: [Clientes]
+      summary: Crear un nuevo cliente (JSON)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cliente"
+      responses:
+        "201":
+          description: Cliente creado
+        "400":
+          description: Error de validación
+
+  /clientes/obtener:
+    post:
+      tags: [Clientes]
+      summary: Obtener cliente por CURP (JSON)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: 
+                - curp
+              properties:
+                curp:
+                  type: string
+                  example: ABCD123456HDFLTR01
+      responses:
+        "200":
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+        "404":
+          description: Cliente no encontrado
+
+  /clientes/actualizar:
+    put:
+      tags: [Clientes]
+      summary: Actualizar cliente por CURP (JSON)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - curp
+                - datos
+              properties:
+                curp:
+                  type: string
+                  example: "AAOM120821MGTNRYA3"
+                  description: CURP del cliente a actualizar
+                datos:
+                  $ref: "#/components/schemas/ClienteActualizar"
+      responses:
+        "200":
+          description: Cliente actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Cliente actualizado correctamente"
+                  cliente:
+                    $ref: "#/components/schemas/Cliente"
+        "400":
+          description: Datos inválidos o CURP faltante
+        "404":
+          description: Cliente no encontrado
+
+
+  /clientes/eliminar:
+    delete:
+      tags: [Clientes]
+      summary: Eliminar cliente por CURP (JSON)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - curp
+              properties:
+                curp:
+                  type: string
+      responses:
+        "200":
+          description: Cliente eliminado
+        "404":
+          description: Cliente no encontrado
+  /contratos:
+    get:
+      tags: [Contratos]
+      summary: Obtener todos los contratos
+      responses:
+        "200":
+          description: Lista de contratos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContratoVenta"
+
+    post:
+      tags: [Contratos]
+      summary: Crear un nuevo contrato de venta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContratoVenta"
+      responses:
+        "201":
+          description: Contrato creado
+        "400":
+          description: Error de validación
+
+  # =========================
+  # Pagos
+  # =========================
+  /pagos/contrato:
+    post:
+      tags: [Pagos]
+      summary: Obtener pagos de un cliente por correo usando JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - correo
+              properties:
+                correo:
+                  type: string
+                  example: cliente@gmail.com
+      responses:
+        "200":
+          description: Lista de pagos del cliente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pago"
+        "400":
+          description: Correo faltante
+        "404":
+          description: No se encontraron pagos
+
+  /pagos/marcar-pagado:
+    put:
+      tags: [Pagos]
+      summary: Marcar el siguiente pago pendiente de un cliente como pagado usando su correo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - correo
+              properties:
+                correo:
+                  type: string
+                  description: Correo del cliente
+                metodo_pago:
+                  type: string
+                  description: Método de pago (opcional, por defecto "efectivo")
+      responses:
+        "200":
+          description: Pago actualizado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  pago:
+                    $ref: '#/components/schemas/Pago'
+        "404":
+          description: No hay pagos pendientes para este cliente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: No hay pagos pendientes para este cliente
+        "400":
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
 
 components:
   schemas:
@@ -347,3 +720,88 @@ components:
           type: string
         telefono:
           type: string
+
+    Cliente:
+      type: object
+      properties:
+        nombre:
+          type: string
+        apellido_paterno:
+          type: string
+        apellido_materno:
+          type: string
+          nullable: true
+        correo:
+          type: string
+        telefono:
+          type: string
+          nullable: true
+        curp:
+          type: string
+        clave_elector:
+          type: string
+          nullable: true
+        doc_identificacion:
+          type: string
+          nullable: true
+        doc_curp:
+          type: string
+          nullable: true
+
+    ClienteActualizar:
+      type: object
+      properties:
+        nombre:
+          type: string
+        apellido_paterno:
+          type: string
+        apellido_materno:
+          type: string
+        correo:
+          type: string
+        telefono:
+          type: string
+        clave_elector:
+          type: string
+        doc_identificacion:
+          type: string
+        doc_curp:
+          type: string
+
+    ContratoVenta:
+      type: object
+      properties:
+        id_lote:
+          type: integer
+        id_cliente:
+          type: integer
+        precio_total:
+          type: number
+        enganche:
+          type: number
+        plazo_meses:
+          type: integer
+        estado_contrato:
+          type: string
+          enum: [activo, cancelado, pagado]
+          default: activo
+
+    Pago:
+      type: object
+      properties:
+        id_contrato:
+          type: integer
+        numero_pago:
+          type: integer
+        monto:
+          type: number
+        fecha_pago:
+          type: string
+          format: date
+        metodo_pago:
+          type: string
+          default: efectivo
+        estado_pago:
+          type: string
+          enum: [pendiente, pagado, atrasado]
+          default: pendiente

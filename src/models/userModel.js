@@ -5,14 +5,17 @@ const Joi = require('joi');
 const SALT_ROUNDS = 10;
 
 // ====== VALIDACIÓN DE DATOS ======
+
+
 const userSchema = Joi.object({
   usuario: Joi.string().min(3).max(50).required(),
   password: Joi.string().min(6).required(),
   // rol: Joi.string().valid('admin','vendedor','cliente','dueño','secretaria').required(),
   rol: Joi.string().valid('secretaria', 'encargado').required(),
   correo: Joi.string().email().required(),
-  telefono: Joi.string().pattern(/^[0-9]{10,15}$/).required()
+  telefono: Joi.string().pattern(/^[0-9]{10}$/).required() // Solo 10 dígitos
 });
+
 
 const User = {
   // ================== VALIDACIÓN ==================
@@ -42,39 +45,78 @@ const User = {
 
   // ================== CREAR USUARIO ==================
   create: async ({ usuario, password, rol, correo, telefono }) => {
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  // Verificar si el correo o teléfono ya existen
+  const exists = await pool.query(
+    `SELECT id_user FROM "users" WHERE correo = $1 OR telefono = $2`,
+    [correo, telefono]
+  );
 
-    const res = await pool.query(
-      `INSERT INTO "users" (usuario, password, rol, correo, telefono)
-       VALUES ($1,$2,$3,$4,$5) 
-       RETURNING id_user, usuario, rol, correo, telefono`,
-      [usuario, hashedPassword, rol, correo, telefono]
-    );
-    return res.rows[0];
-  },
+  if (exists.rows.length > 0) {
+    throw new Error('El correo o teléfono ya están registrados.');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+  const res = await pool.query(
+    `INSERT INTO "users" (usuario, password, rol, correo, telefono)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id_user, usuario, rol, correo, telefono`,
+    [usuario, hashedPassword, rol, correo, telefono]
+  );
+
+  return res.rows[0];
+},
+
 
   // ================== ACTUALIZAR USUARIO ==================
   update: async (id, data) => {
-    let fields = [], values = [], i = 1;
+  // Verificar duplicados solo si cambia correo o teléfono
+  if (data.correo || data.telefono) {
+    const checkQuery = [];
+    const checkValues = [];
+    let i = 1;
 
-    if (data.usuario) { fields.push(`usuario=$${i++}`); values.push(data.usuario); }
-    if (data.password) { 
-      const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
-      fields.push(`password=$${i++}`); values.push(hashed);
+    if (data.correo) {
+      checkQuery.push(`correo = $${i++}`);
+      checkValues.push(data.correo);
     }
-    if (data.rol) { fields.push(`rol=$${i++}`); values.push(data.rol); }
-    if (data.correo) { fields.push(`correo=$${i++}`); values.push(data.correo); }
-    if (data.telefono) { fields.push(`telefono=$${i++}`); values.push(data.telefono); }
+    if (data.telefono) {
+      checkQuery.push(`telefono = $${i++}`);
+      checkValues.push(data.telefono);
+    }
 
-    if (fields.length === 0) throw new Error("No hay datos para actualizar");
-
-    const res = await pool.query(
-      `UPDATE "users" SET ${fields.join(', ')} WHERE id_user=$${i} 
-       RETURNING id_user, usuario, rol, correo, telefono`,
-      [...values, id]
+    const check = await pool.query(
+      `SELECT id_user FROM "users" WHERE (${checkQuery.join(' OR ')}) AND id_user != $${i}`,
+      [...checkValues, id]
     );
-    return res.rows[0];
-  },
+
+    if (check.rows.length > 0) {
+      throw new Error('El correo o teléfono ya están registrados por otro usuario.');
+    }
+  }
+
+  // Armar la actualización
+  let fields = [], values = [], j = 1;
+  if (data.usuario) { fields.push(`usuario=$${j++}`); values.push(data.usuario); }
+  if (data.password) { 
+    const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
+    fields.push(`password=$${j++}`); values.push(hashed);
+  }
+  if (data.rol) { fields.push(`rol=$${j++}`); values.push(data.rol); }
+  if (data.correo) { fields.push(`correo=$${j++}`); values.push(data.correo); }
+  if (data.telefono) { fields.push(`telefono=$${j++}`); values.push(data.telefono); }
+
+  if (fields.length === 0) throw new Error("No hay datos para actualizar");
+
+  const res = await pool.query(
+    `UPDATE "users" SET ${fields.join(', ')} WHERE id_user=$${j}
+     RETURNING id_user, usuario, rol, correo, telefono`,
+    [...values, id]
+  );
+
+  return res.rows[0];
+},
+
 
   // ================== ELIMINAR USUARIO ==================
   delete: async (id) => {
