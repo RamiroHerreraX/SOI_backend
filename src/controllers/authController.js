@@ -15,11 +15,13 @@ const loginAttempts = {};
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // =================== UTILIDADES ===================
-const saveOffline = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
-const readOffline = (file) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : []);
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const saveOffline = (file, data) =>
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+const readOffline = (file) =>
+  fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [];
 
 // =================== TRANSPORTADOR DE EMAIL ===================
 const transporter = nodemailer.createTransport({
@@ -27,6 +29,7 @@ const transporter = nodemailer.createTransport({
   auth: { user: EMAIL_USER, pass: EMAIL_PASS },
   tls: { rejectUnauthorized: false },
 });
+
 transporter.verify((error, success) => {
   if (error) console.error("Error transporter:", error);
   else console.log("Servidor SMTP listo para enviar emails");
@@ -56,7 +59,7 @@ exports.login = async (req, res) => {
     if (!valid) {
       loginAttempts[correo].intentos++;
       if (loginAttempts[correo].intentos >= 5) {
-        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000; // 1 min
+        loginAttempts[correo].bloqueado = Date.now() + 60 * 1000; // 1 minuto
         loginAttempts[correo].intentos = 0;
         return res.json({ status: "fail", msg: "Usuario bloqueado por intentos fallidos" });
       }
@@ -92,7 +95,8 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { correo, otp } = req.body;
 
-    if (!correo || !otp) return res.json({ status: "fail", msg: "Correo y OTP requeridos" });
+    if (!correo || !otp)
+      return res.json({ status: "fail", msg: "Correo y OTP requeridos" });
 
     const record = otpStore[correo];
     if (!record) return res.json({ status: "fail", msg: "OTP no generado" });
@@ -101,11 +105,13 @@ exports.verifyOtp = async (req, res) => {
 
     delete otpStore[correo];
     const user = await User.getByEmail(correo);
+
     const token = jwt.sign(
       { id: user.id_user, rol: user.rol },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
     res.json({ status: "success", msg: "Autenticación 2FA exitosa", token });
   } catch (err) {
     console.error("Error verifyOtp:", err.message);
@@ -119,12 +125,14 @@ exports.sendResetLink = async (req, res) => {
     const { correo } = req.body;
 
     if (!correo) return res.json({ status: "fail", msg: "Correo requerido" });
-    if (!emailRegex.test(correo)) return res.json({ status: "fail", msg: "Formato de correo inválido" });
+    if (!emailRegex.test(correo))
+      return res.json({ status: "fail", msg: "Formato de correo inválido" });
 
     const user = await User.getByEmail(correo);
     if (!user) return res.json({ status: "fail", msg: "Usuario no encontrado" });
 
     const token = crypto.randomBytes(32).toString("hex");
+
     const resets = readOffline(resetTokensFile);
     resets.push({ correo, token, expires: Date.now() + 15 * 60 * 1000 });
     saveOffline(resetTokensFile, resets);
@@ -141,7 +149,7 @@ exports.sendResetLink = async (req, res) => {
 
     res.json({ status: "success", msg: "Enlace de recuperación enviado" });
   } catch (err) {
-    console.error("Error enviando correo:", err);
+    console.error("Error enviando correo:", err.message);
     res.json({ status: "error", msg: "Error enviando correo" });
   }
 };
@@ -154,21 +162,31 @@ exports.resetPassword = async (req, res) => {
 
     if (!token || !password)
       return res.json({ status: "fail", msg: "Token y nueva contraseña requeridos" });
+
     if (password.length < 6)
       return res.json({ status: "fail", msg: "Contraseña muy corta" });
 
     const resets = readOffline(resetTokensFile);
     const resetData = resets.find((r) => r.token === token);
     if (!resetData) return res.json({ status: "fail", msg: "Token inválido" });
-    if (Date.now() > resetData.expires) return res.json({ status: "fail", msg: "Token expirado" });
+    if (Date.now() > resetData.expires)
+      return res.json({ status: "fail", msg: "Token expirado" });
 
     const hashed = await bcrypt.hash(password, 10);
     await User.updatePassword(resetData.correo, hashed);
 
+    // Eliminar token usado
     saveOffline(resetTokensFile, resets.filter((r) => r.token !== token));
+
     res.json({ status: "success", msg: "Contraseña actualizada correctamente" });
   } catch (err) {
-    console.error("Error resetPassword:", err);
+    console.error("Error resetPassword:", err.message);
     res.json({ status: "error", msg: "Error en el servidor" });
   }
 };
+
+// =================== EXPORTS PARA TEST ===================
+if (process.env.NODE_ENV === "test") {
+  module.exports._otpStore = otpStore;
+  module.exports._resetTokensFile = resetTokensFile;
+}
