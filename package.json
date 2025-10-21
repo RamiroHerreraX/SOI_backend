@@ -38,6 +38,9 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "jest": "^30.2.0",
+    "mock-fs": "^5.5.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   }
 }
