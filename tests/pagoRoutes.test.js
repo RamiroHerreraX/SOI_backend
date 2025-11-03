@@ -1,67 +1,46 @@
 // tests/pagoRoutes.test.js
 const request = require('supertest');
 const express = require('express');
-const bodyParser = require('body-parser');
-
-const pagoController = require('../src/controllers/pagoController');
 
 // Mock del controlador
-jest.mock('../src/controllers/pagoController');
+jest.mock('../src/controllers/pagoController', () => ({
+  getByContrato: jest.fn((req, res) => res.status(200).json({ message: 'Contrato encontrado' })),
+  marcarPagadoPorCorreo: jest.fn((req, res) => res.status(200).json({ message: 'Pago marcado como pagado' })),
+}));
 
-const app = express();
-app.use(bodyParser.json());
+const pagoController = require('../src/controllers/pagoController');
+const pagoRoutes = require('../src/routes/pagoRoutes');
 
-// Configurar rutas como en pagoRoutes.js
-const router = express.Router();
-router.post('/contrato', pagoController.getByContrato);
-router.put('/marcar-pagado', pagoController.marcarPagadoPorCorreo);
+describe('Rutas de pago', () => {
+  let app;
 
-app.use('/pagos', router);
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/pagos', pagoRoutes);
+  });
 
-describe('📋 Pago Routes', () => {
-
-  beforeEach(() => {
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  // ---------- POST /pagos/contrato ----------
-  test('POST /pagos/contrato - debe devolver pagos por contrato', async () => {
-    const fakePagos = [{ id_pago: 1, monto: 100 }];
-    pagoController.getByContrato.mockImplementation((req, res) => res.status(200).json(fakePagos));
+  test('POST /api/pagos/contrato llama a pagoController.getByContrato', async () => {
+    const response = await request(app)
+      .post('/api/pagos/contrato')
+      .send({ contratoId: 123 });
 
-    const res = await request(app).post('/pagos/contrato').send({ id_contrato: 1 });
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(fakePagos);
-    expect(pagoController.getByContrato).toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Contrato encontrado');
+    expect(pagoController.getByContrato).toHaveBeenCalledTimes(1);
   });
 
-  test('POST /pagos/contrato - manejar error', async () => {
-    pagoController.getByContrato.mockImplementation((req, res) => res.status(500).json({ error: 'DB Error' }));
+  test('PUT /api/pagos/marcar-pagado llama a pagoController.marcarPagadoPorCorreo', async () => {
+    const response = await request(app)
+      .put('/api/pagos/marcar-pagado')
+      .send({ correo: 'test@example.com' });
 
-    const res = await request(app).post('/pagos/contrato').send({ id_contrato: 1 });
-    expect(res.statusCode).toBe(500);
-    expect(res.body.error).toBe('DB Error');
-    expect(pagoController.getByContrato).toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Pago marcado como pagado');
+    expect(pagoController.marcarPagadoPorCorreo).toHaveBeenCalledTimes(1);
   });
-
-  // ---------- PUT /pagos/marcar-pagado ----------
-  test('PUT /pagos/marcar-pagado - debe marcar pagos como pagados por correo', async () => {
-    const fakeResponse = { mensaje: 'Pagos actualizados' };
-    pagoController.marcarPagadoPorCorreo.mockImplementation((req, res) => res.status(200).json(fakeResponse));
-
-    const res = await request(app).put('/pagos/marcar-pagado').send({ correo: 'juan@example.com' });
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual(fakeResponse);
-    expect(pagoController.marcarPagadoPorCorreo).toHaveBeenCalled();
-  });
-
-  test('PUT /pagos/marcar-pagado - manejar error', async () => {
-    pagoController.marcarPagadoPorCorreo.mockImplementation((req, res) => res.status(500).json({ error: 'DB Error' }));
-
-    const res = await request(app).put('/pagos/marcar-pagado').send({ correo: 'juan@example.com' });
-    expect(res.statusCode).toBe(500);
-    expect(res.body.error).toBe('DB Error');
-    expect(pagoController.marcarPagadoPorCorreo).toHaveBeenCalled();
-  });
-
 });
