@@ -1,1 +1,1 @@
- 2jsX|hr*src/controllers/contratoVentaController.js
+ 2jsX¦hr*src/controllers/contratoVentaController.js
