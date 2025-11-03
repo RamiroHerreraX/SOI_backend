@@ -24,7 +24,7 @@ describe('Rutas de pago', () => {
     jest.clearAllMocks();
   });
 
-  test('POST /api/pagos/contrato debe llamar pagoController.getByContrato', async () => {
+  test('POST /api/pagos/contrato llama a pagoController.getByContrato', async () => {
     const response = await request(app)
       .post('/api/pagos/contrato')
       .send({ contratoId: 123 });
@@ -34,7 +34,7 @@ describe('Rutas de pago', () => {
     expect(pagoController.getByContrato).toHaveBeenCalledTimes(1);
   });
 
-  test('PUT /api/pagos/marcar-pagado debe llamar pagoController.marcarPagadoPorCorreo', async () => {
+  test('PUT /api/pagos/marcar-pagado llama a pagoController.marcarPagadoPorCorreo', async () => {
     const response = await request(app)
       .put('/api/pagos/marcar-pagado')
       .send({ correo: 'test@example.com' });

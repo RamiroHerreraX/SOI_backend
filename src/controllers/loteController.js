@@ -1,4 +1,4 @@
-const Lote = require('../models/loteModel');
+const {Lote, loteSchema} = require('../models/loteModel');
 
 const asyncHandler = fn => (req, res, next) => {
   Promise.resolve(fn(req,res,next)).catch(next);
@@ -16,29 +16,36 @@ exports.getLoteById = asyncHandler(async (req,res)=>{
 });
 
 exports.createLote = asyncHandler(async (req, res) => {
-  try {
-    const { error } = loteSchema.validate(req.body, { abortEarly: false });
-    if (error) {
-      return res.status(400).json({
-        mensaje: "Errores de validación",
-        detalles: error.details.map(err => err.message)
-      });
-    }
-    const data = { ...req.body };
+    try {
+        // 1. **CAMBIO CLAVE:** Usar Lote.validate en lugar de loteSchema.validate.
+        // Lote.validate ya incluye el saneamiento ('' -> null).
+        // También usamos 'value' para obtener los datos validados y limpios.
+        const { error, value: validatedData } = Lote.validate(req.body); 
 
-    if (req.file) {
-      // Guardar la ruta de la imagen en el objeto data
-      data.imagen = `/uploads/${req.file.filename}`;
-    } else {
-      data.imagen = null;
-    }
+        if (error) {
+            return res.status(400).json({
+                mensaje: "Errores de validación",
+                detalles: error.details.map(err => err.message)
+            });
+        }
+        
+        // 2. Usar validatedData (datos limpios) para la creación.
+        const data = { ...validatedData };
 
-    const lote = await Lote.create(data);
-    res.status(201).json(lote);
-  } catch (err) {
-    console.error('Error createLote:', err.message || err);
-    res.status(400).json({ error: err.message || 'Error al crear el lote (backend)' });
-  }
+        if (req.file) {
+            // Guardar la ruta de la imagen en el objeto data
+            data.imagen = `/uploads/${req.file.filename}`;
+        } else {
+            // Si Joi no puso 'null' (en caso de que el campo 'imagen' no viniera), forzamos a null.
+            data.imagen = data.imagen || null; 
+        }
+
+        const lote = await Lote.create(data);
+        res.status(201).json(lote);
+    } catch (err) {
+        console.error('Error createLote:', err.message || err);
+        res.status(400).json({ error: err.message || 'Error al crear el lote (backend)' });
+    }
 });
 
 // Obtener lote por numLote+manzana (terreno) o direccion (otros)
@@ -103,7 +110,17 @@ exports.deleteLoteByQuery = asyncHandler(async (req, res) => {
 
 
 exports.updateLote = asyncHandler(async (req,res)=>{
-  const data = { ...req.body };
+  const { error, value: validatedData } = Lote.validate(req.body);
+
+    if (error) {
+        return res.status(400).json({
+            mensaje: "Errores de validación",
+            detalles: error.details.map(err => err.message)
+        });
+    }
+
+    // 2. Preparar los datos limpios y la imagen
+    const data = { ...validatedData };
   if (req.file) {
     data.imagen = `/uploads/${req.file.filename}`;
   }

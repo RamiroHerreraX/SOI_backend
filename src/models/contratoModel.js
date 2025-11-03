@@ -1,85 +1,84 @@
-// tests/contratoVenta.test.js
-const ContratoVenta = require('../src/models/contratoModel');
+const pool = require('../db');
+const Joi = require('joi');
 
-describe('ContratoVenta Model', () => {
+// Define el esquema completo para la validación del contrato y el cliente
+const contratoSchema = Joi.object({
+    // --- Campos del Contrato (Obligatorios) ---
+    id_lote: Joi.number().integer().required().messages({
+        'any.required': 'El ID del lote es obligatorio.',
+        'number.base': 'El ID del lote debe ser un número entero.'
+    }),
+    precio_total: Joi.number().positive().precision(2).required().messages({
+        'any.required': 'El precio total es obligatorio.',
+        'number.base': 'El precio total debe ser un número.',
+        'number.positive': 'El precio total debe ser positivo.'
+    }),
+    enganche: Joi.number().min(0).precision(2).required().messages({
+        'any.required': 'El enganche es obligatorio.',
+        'number.base': 'El enganche debe ser un número.'
+    }),
+    plazo_meses: Joi.number().integer().min(1).required().messages({
+        'any.required': 'El plazo en meses es obligatorio.',
+        'number.base': 'El plazo debe ser un número entero.',
+        'number.min': 'El plazo debe ser de al menos 1 mes.'
+    }),
+    estado_contrato: Joi.string().max(50).optional(), // Puede tener un valor por defecto o ser opcional
 
-  // ---------- Validación Joi ----------
-  describe('validate', () => {
-    it('debe validar un contrato correcto', () => {
-      const data = {
-        id_lote: 1,
-        id_cliente: 2,
-        precio_total: 1000.50,
-        enganche: 100,
-        plazo_meses: 12,
-        estado_contrato: 'activo'
-      };
-      const { error, value } = ContratoVenta.validate(data);
-      expect(error).toBeUndefined();
-      expect(value).toMatchObject(data);
-    });
+    // --- Campos Condicionales del Cliente ---
+    id_cliente: Joi.number().integer().optional(),
 
-    it('debe fallar si falta id_lote', () => {
-      const data = { precio_total: 1000, enganche: 100, plazo_meses: 12 };
-      const { error } = ContratoVenta.validate(data);
-      expect(error).toBeDefined();
-      expect(error.message).toContain('El id_lote es obligatorio');
-    });
+    // Nombre: Requerido si NO hay id_cliente; Prohibido si SÍ hay id_cliente.
+    nombre: Joi.string().max(100).when('id_cliente', {
+        is: Joi.exist(),
+        then: Joi.forbidden(),
+        otherwise: Joi.string().max(100).required().messages({
+            'string.base': 'El nombre debe ser un texto',
+            'string.max': 'El nombre no debe exceder los 100 caracteres',
+            'any.required': 'El nombre es obligatorio si no se proporciona un ID de cliente'
+        })
+    }),
 
-    it('debe permitir datos de cliente si no hay id_cliente', () => {
-      const data = { 
-        id_lote: 1,
-        id_cliente: null,
-        precio_total: 1000,
-        enganche: 100,
-        plazo_meses: 12,
-        nombre: 'Juan',
-        apellido_paterno: 'Pérez'
-      };
-      const { error, value } = ContratoVenta.validate(data);
-      expect(error).toBeUndefined();
-      expect(value.nombre).toBe('Juan');
-    });
+    // Apellido Paterno: Requerido si NO hay id_cliente; Prohibido si SÍ hay id_cliente.
+    apellido_paterno: Joi.string().max(50).when('id_cliente', {
+        is: Joi.exist(),
+        then: Joi.forbidden(),
+        otherwise: Joi.string().max(50).required().messages({ // Debe ser requerido en 'otherwise'
+            'string.base': 'El apellido paterno debe ser un texto',
+            'string.max': 'El apellido paterno no debe exceder los 50 caracteres',
+            'any.required': 'El apellido paterno es obligatorio si no se proporciona un ID de cliente'
+        })
+    }),
 
-    it('debe prohibir datos de cliente si hay id_cliente', () => {
-      const data = { 
-        id_lote: 1,
-        id_cliente: 1,
-        precio_total: 1000,
-        enganche: 100,
-        plazo_meses: 12,
-        nombre: 'Juan'
-      };
-      const { error } = ContratoVenta.validate(data);
-      expect(error).toBeDefined();
-    });
-  });
+    // Apellido Materno: Opcional y permite nulo.
+    apellido_materno: Joi.string().max(50).allow(null).optional().messages({
+        'string.base': 'El apellido materno debe ser un texto',
+        'string.max': 'El apellido materno no debe exceder los 50 caracteres'
+    }),
 
-  // ---------- createContractRecord ----------
-  describe('createContractRecord', () => {
-    it('debe insertar un contrato y retornar el registro', async () => {
-      // Cliente mock que simula query
-      const fakeClient = {
-        query: jest.fn().mockResolvedValue({ rows: [{ id: 1 }] })
-      };
-
-      const payload = {
-        id_lote: 1,
-        id_cliente: 2,
-        precio_total: 1000,
-        enganche: 100,
-        plazo_meses: 12,
-        estado_contrato: 'activo'
-      };
-
-      const result = await ContratoVenta.createContractRecord(fakeClient, payload);
-
-      expect(result).toEqual({ id: 1 });
-      expect(fakeClient.query).toHaveBeenCalledTimes(1);
-      expect(fakeClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO contrato_venta'),
-        [payload.id_lote, payload.id_cliente, payload.precio_total, payload.enganche, payload.plazo_meses, payload.estado_contrato]
-      );
-    });
-  });
+    // Teléfono: Opcional y permite nulo.
+    telefono: Joi.string().max(20).allow(null).optional().messages({
+        'string.base': 'El teléfono debe ser un texto',
+        'string.max': 'El teléfono no debe exceder los 20 caracteres'
+    })
 });
+
+const ContratoVenta = {
+    validate: (data) => contratoSchema.validate(data)
+};
+
+ContratoVenta.createContractRecord = async (client, payload) => {
+    const { id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato } = payload;
+    
+    // NOTA: Esta función asume que id_cliente existe.
+    // Si la lógica implica crear el cliente, esta función debe ser parte de una transacción
+    // que primero crea el cliente, obtiene su ID, y luego inserta el contrato.
+    
+    const res = await client.query(`
+        INSERT INTO contrato_venta (id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato)
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+    `, [id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato]);
+    
+    return res.rows[0];
+};
+
+module.exports = ContratoVenta;
