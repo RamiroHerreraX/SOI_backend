@@ -1,1 +1,1 @@
-. (2jsXThrtests/contratoModel.test.js
+. (2jsXThrtests/contratoModel.test.js
