@@ -97,13 +97,56 @@ const Lote = {
   },
 
   getAll: async () => {
-    const res = await pool.query('SELECT * FROM lote ORDER BY id_propiedad');
-    return res.rows;
+    const query = `
+      SELECT 
+        l.id_propiedad,
+        l.tipo,
+        l.numLote,
+        l.manzana,
+        l.direccion,
+        l.superficie_m2,
+        l.precio,
+        l.valor_avaluo,
+        l.num_habitaciones,
+        l.num_banos,
+        l.num_estacionamientos,
+        l.servicios,
+        l.descripcion,
+        l.topografia,
+        l.documentacion,
+        l.estado_propiedad,
+        l.fecha_disponibilidad,
+        l.imagen,
+        l.id_user,
+        c.nombre_colonia AS colonia_nombre,
+        ci.nombre_ciudad AS ciudad_nombre,
+        e.nombre_estado AS estado_nombre
+      FROM lote l
+      LEFT JOIN colonia c ON l.id_colonia = c.id_colonia
+      LEFT JOIN ciudad ci ON l.id_ciudad = ci.id_ciudad
+      LEFT JOIN estado e ON l.id_estado = e.id_estado
+      ORDER BY l.id_propiedad DESC;
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
   },
 
   getById: async (id) => {
-    const res = await pool.query('SELECT * FROM lote WHERE id_propiedad=$1', [id]);
-    return res.rows[0];
+    const query = `
+      SELECT 
+        l.*,
+        c.nombre_colonia AS colonia_nombre,
+        ci.nombre_ciudad AS ciudad_nombre,
+        e.nombre_estado AS estado_nombre
+      FROM lote l
+      LEFT JOIN colonia c ON l.id_colonia = c.id_colonia
+      LEFT JOIN ciudad ci ON l.id_ciudad = ci.id_ciudad
+      LEFT JOIN estado e ON l.id_estado = e.id_estado
+      WHERE l.id_propiedad = $1
+      LIMIT 1;
+    `;
+    const { rows } = await pool.query(query, [id]);
+    return rows[0];
   },
 
   create: async (data) => {
