@@ -18,13 +18,27 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 router.get('/', loteController.getAllLotes);
 router.get('/:id', loteController.getLoteById);
-router.post('/', upload.single('imagen'), loteController.createLote);
-router.put('/:id', upload.single('imagen'), loteController.updateLote);
+router.post(
+  '/',
+  upload.fields([
+    { name: 'imagenes', maxCount: 10 },
+    { name: 'documentacion', maxCount: 1 } // ✅ acepta también el PDF
+  ]),
+  loteController.createLote
+);
+
+router.put('/:id',  
+  upload.fields([
+        { name: 'imagenes', maxCount: 10 },
+        { name: 'documentacion', maxCount: 1 }
+    ]), 
+    loteController.updateLote
+);
 router.delete('/:id', loteController.deleteLote);
 
 
 router.get('/buscar', loteController.getLote);
-router.put('/actualizar', upload.single('imagen'), loteController.updateLoteByQuery);
+router.put('/actualizar', upload.array('imagenes', 10), loteController.updateLoteByQuery);
 router.delete('/eliminar', loteController.deleteLoteByQuery);
 
 

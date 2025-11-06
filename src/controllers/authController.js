@@ -115,6 +115,7 @@ exports.verifyOtp = async (req, res) => {
 
     delete otpStore[correo];
     const user = await User.getByEmail(correo);
+    console.log(user);
 
     const token = jwt.sign(
       { id: user.id_user, rol: user.rol },
@@ -122,7 +123,16 @@ exports.verifyOtp = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(200).json({ status: "success", msg: "Autenticación 2FA exitosa", token });
+    res.status(200).json({
+      status: "success",
+      msg: "Autenticación 2FA exitosa",
+      token,
+      user: {
+        nombre: user.usuario,
+        rol: user.rol,
+        correo: user.correo
+      }
+    });
   } catch (err) {
     console.error("Error verifyOtp:", err.message);
     res.status(500).json({ status: "error", msg: "Error en el servidor" });

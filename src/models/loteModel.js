@@ -117,7 +117,12 @@ const Lote = {
         l.estado_propiedad,
         l.fecha_disponibilidad,
         l.imagen,
+        l.imagenes,
         l.id_user,
+        l.id_estado,             
+        l.id_ciudad,           
+        l.id_colonia,           
+        c.codigo_postal,
         c.nombre_colonia AS colonia_nombre,
         ci.nombre_ciudad AS ciudad_nombre,
         e.nombre_estado AS estado_nombre
@@ -188,7 +193,7 @@ const Lote = {
         data.num_habitaciones || null, data.num_banos || null, data.num_estacionamientos || null,
         data.servicios || null, data.descripcion || null, data.topografia || null,
         data.documentacion || null, data.estado_propiedad, data.fecha_disponibilidad || null,
-        data.imagen || null, data.id_user ? parseInt(data.id_user) : null
+        data.imagenes || [], data.id_user ? parseInt(data.id_user) : null
       ];
 
       const insertLoteQ = `
@@ -198,7 +203,7 @@ const Lote = {
           superficie_m2, precio, valor_avaluo,
           num_habitaciones, num_banos, num_estacionamientos,
           servicios, descripcion, topografia, documentacion,
-          estado_propiedad, fecha_disponibilidad, imagen, id_user
+          estado_propiedad, fecha_disponibilidad, imagenes, id_user
         ) VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
         ) RETURNING *
@@ -264,12 +269,19 @@ const Lote = {
     delete data.nombre_colonia_nueva;
     delete data.codigo_postal;
 
-    // UPDATE dinámico
+    // UPDATE dinámico con soporte para arrays
     let fields = [], values = [], i = 1;
-    for (const [key, value] of Object.entries(data)) {
-      fields.push(`${key}=$${i++}`);
-      values.push(value);
+   for (const [key, value] of Object.entries(data)) {
+      if (key === 'imagenes' && Array.isArray(value)) {
+        // pg puede recibir array JS directamente si la columna es text[]
+        fields.push(`${key}=$${i++}`);
+        values.push(value);
+      } else {
+        fields.push(`${key}=$${i++}`);
+        values.push(value);
+      }
     }
+
     if (fields.length === 0) throw new Error("No hay datos válidos para actualizar");
 
     const res = await client.query(

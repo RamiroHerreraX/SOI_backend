@@ -699,9 +699,11 @@ components:
           type: string
           format: date
           nullable: true
-        imagen:
-          type: string
-          nullable: true
+        imagenes:
+          type: array
+          items:
+            type: string
+          description: Lista de URLs de las imágenes del lote
         id_user:
           type: integer
           nullable: true

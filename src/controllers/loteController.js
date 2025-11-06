@@ -32,13 +32,19 @@ exports.createLote = asyncHandler(async (req, res) => {
         // 2. Usar validatedData (datos limpios) para la creación.
         const data = { ...validatedData };
 
-        if (req.file) {
-            // Guardar la ruta de la imagen en el objeto data
-            data.imagen = `/uploads/${req.file.filename}`;
+        
+
+        if (req.files?.imagenes?.length) {
+          data.imagenes = req.files.imagenes.map(f => `/uploads/${f.filename}`);
         } else {
-            // Si Joi no puso 'null' (en caso de que el campo 'imagen' no viniera), forzamos a null.
-            data.imagen = data.imagen || null; 
+          data.imagenes = [];
         }
+
+        if (req.files?.documentacion?.[0]) {
+          data.documentacion = `/uploads/${req.files.documentacion[0].filename}`;
+        }
+
+
 
         const lote = await Lote.create(data);
         res.status(201).json(lote);
@@ -121,9 +127,23 @@ exports.updateLote = asyncHandler(async (req,res)=>{
 
     // 2. Preparar los datos limpios y la imagen
     const data = { ...validatedData };
-  if (req.file) {
-    data.imagen = `/uploads/${req.file.filename}`;
-  }
+  //if (req.file) {
+  //  data.imagen = `/uploads/${req.file.filename}`;
+  //}
+   // Manejar las imágenes (múltiples)
+    if (req.files?.imagenes?.length) {
+        // Si el lote ya tenía imágenes y quieres reemplazarlas:
+        // data.imagenes = req.files.imagenes.map(f => `/uploads/${f.filename}`);
+        // Si quieres agregar nuevas imágenes sin borrar las existentes:
+        const existingImages = validatedData.imagenes || [];
+        
+        data.imagenes = existingImages.concat(req.files.imagenes.map(f => `/uploads/${f.filename}`));
+    }
+
+   // Manejar documentación (solo un archivo PDF)
+    if (req.files?.documentacion?.[0]) {
+        data.documentacion = `/uploads/${req.files.documentacion[0].filename}`;
+    }
   const lote = await Lote.update(req.params.id, data);
   res.json(lote);
 });
