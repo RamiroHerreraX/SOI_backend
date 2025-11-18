@@ -1,10 +1,7 @@
-// src/controllers/contratoVentaController.js (CORREGIDO)
-
 const pool = require('../db');
 const Cliente = require('../models/clienteModel');
 const ContratoVenta = require('../models/contratoModel');
 const Pago = require('../models/pagoModel');
-// Probablemente necesites Lote también, aunque no está importado aquí.
 
 // ======================================================
 // Helper para envolver funciones asíncronas
@@ -42,17 +39,19 @@ function phoneNormalizer(phone) {
 exports.obtenerContrato = asyncHandler(async (req, res) => {
   const query = `
     SELECT cv.*, 
-           c.nombre AS cliente_nombre, 
-           c.apellido_paterno, 
-           c.apellido_materno, 
-           c.correo, 
-           c.telefono,
-           l.tipo AS lote_tipo, 
-           l.numlote, 
-           l.direccion
+          c.nombre AS cliente_nombre, 
+          c.apellido_paterno, 
+          c.apellido_materno, 
+          c.correo, 
+          c.telefono,
+          l.tipo AS lote_tipo, 
+          l.numlote, 
+          l.direccion,
+          u.usuario AS propietario_nombre
     FROM contrato_venta cv
     INNER JOIN cliente c ON cv.id_cliente = c.id_cliente
     INNER JOIN lote l ON cv.id_lote = l.id_propiedad
+    INNER JOIN users u ON l.id_user = u.id_user
     ORDER BY cv.fecha_contrato DESC
   `;
 
@@ -80,6 +79,7 @@ exports.createContrato = asyncHandler(async (req, res) => {
     enganche,
     plazo_meses,
     estado_contrato = 'activo',
+    propietario_nombre,
     nombre,
     apellido_paterno,
     apellido_materno,
@@ -179,6 +179,7 @@ exports.createContrato = asyncHandler(async (req, res) => {
       enganche: engancheNum,
       plazo_meses: plazoNum,
       estado_contrato,
+      propietario_nombre,
     });
 
     // Calcular mensualidad (redondeo a 2 decimales)
@@ -211,10 +212,19 @@ exports.createContrato = asyncHandler(async (req, res) => {
       ['en proceso', id_lote]
     );
 
+    const propietarioRes = await client.query(`
+    SELECT u.usuario 
+    FROM lote l
+    INNER JOIN users u ON l.id_user = u.id_user
+    WHERE l.id_propiedad = $1
+    `, [id_lote]);
+
+    const propietario_nombre = propietarioRes.rows[0]?.usuario || null;
+
     await client.query('COMMIT');
 
     // Responder con contrato y pagos creados
-    res.status(201).json({ contrato, mensualidad, pagos: pagosCreados });
+    res.status(201).json({ contrato, mensualidad, pagos: pagosCreados, propietario_nombre });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error crear contrato:', err);
@@ -226,3 +236,4 @@ exports.createContrato = asyncHandler(async (req, res) => {
     client.release();
   }
 });
+

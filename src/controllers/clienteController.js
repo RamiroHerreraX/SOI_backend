@@ -1,5 +1,6 @@
 const Cliente = require('../models/clienteModel');
 const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req,res,next)).catch(next);
+const pool = require('../db');
 
 exports.getAll = asyncHandler(async (req, res) => {
   const clientes = await Cliente.getAll();
@@ -85,5 +86,24 @@ exports.delete = asyncHandler(async (req, res) => {
     message: 'Cliente eliminado correctamente',
     cliente: clienteEliminado
   });
+});
+
+exports.buscarPorCorreo = asyncHandler(async (req, res) => {
+  const { correo } = req.query;
+
+  if (!correo) {
+    return res.status(400).json({ message: "Correo requerido" });
+  }
+
+  const result = await pool.query(
+    "SELECT * FROM cliente WHERE correo = $1",
+    [correo]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({ message: "Cliente no encontrado" });
+  }
+
+  res.json(result.rows[0]);
 });
 

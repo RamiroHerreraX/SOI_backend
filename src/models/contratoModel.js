@@ -27,6 +27,10 @@ const contratoSchema = Joi.object({
     // --- Campos Condicionales del Cliente ---
     id_cliente: Joi.number().integer().optional(),
 
+    propietario_nombre: Joi.string().max(150).required().messages({
+        'any.required': 'El nombre del propietario es obligatorio'
+    }),
+
     // Nombre: Requerido si NO hay id_cliente; Prohibido si SÍ hay id_cliente.
     nombre: Joi.string().max(100).when('id_cliente', {
         is: Joi.exist(),
@@ -67,16 +71,12 @@ const ContratoVenta = {
 };
 
 ContratoVenta.createContractRecord = async (client, payload) => {
-    const { id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato } = payload;
-    
-    // NOTA: Esta función asume que id_cliente existe.
-    // Si la lógica implica crear el cliente, esta función debe ser parte de una transacción
-    // que primero crea el cliente, obtiene su ID, y luego inserta el contrato.
-    
+    const { id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato, propietario_nombre } = payload;
+
     const res = await client.query(`
-        INSERT INTO contrato_venta (id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-    `, [id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato]);
+        INSERT INTO contrato_venta (id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato, propietario_nombre)
+        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [id_lote, id_cliente, precio_total, enganche, plazo_meses, estado_contrato, propietario_nombre]);
     
     return res.rows[0];
 };
