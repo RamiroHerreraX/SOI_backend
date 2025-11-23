@@ -31,39 +31,6 @@ const contratoSchema = Joi.object({
         'any.required': 'El nombre del propietario es obligatorio'
     }),
 
-    // Nombre: Requerido si NO hay id_cliente; Prohibido si SÍ hay id_cliente.
-    nombre: Joi.string().max(100).when('id_cliente', {
-        is: Joi.exist(),
-        then: Joi.forbidden(),
-        otherwise: Joi.string().max(100).required().messages({
-            'string.base': 'El nombre debe ser un texto',
-            'string.max': 'El nombre no debe exceder los 100 caracteres',
-            'any.required': 'El nombre es obligatorio si no se proporciona un ID de cliente'
-        })
-    }),
-
-    // Apellido Paterno: Requerido si NO hay id_cliente; Prohibido si SÍ hay id_cliente.
-    apellido_paterno: Joi.string().max(50).when('id_cliente', {
-        is: Joi.exist(),
-        then: Joi.forbidden(),
-        otherwise: Joi.string().max(50).required().messages({ // Debe ser requerido en 'otherwise'
-            'string.base': 'El apellido paterno debe ser un texto',
-            'string.max': 'El apellido paterno no debe exceder los 50 caracteres',
-            'any.required': 'El apellido paterno es obligatorio si no se proporciona un ID de cliente'
-        })
-    }),
-
-    // Apellido Materno: Opcional y permite nulo.
-    apellido_materno: Joi.string().max(50).allow(null).optional().messages({
-        'string.base': 'El apellido materno debe ser un texto',
-        'string.max': 'El apellido materno no debe exceder los 50 caracteres'
-    }),
-
-    // Teléfono: Opcional y permite nulo.
-    telefono: Joi.string().max(20).allow(null).optional().messages({
-        'string.base': 'El teléfono debe ser un texto',
-        'string.max': 'El teléfono no debe exceder los 20 caracteres'
-    })
 });
 
 const ContratoVenta = {

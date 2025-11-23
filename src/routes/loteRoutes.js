@@ -40,6 +40,7 @@ router.delete('/:id', loteController.deleteLote);
 router.get('/buscar', loteController.getLote);
 router.put('/actualizar', upload.array('imagenes', 10), loteController.updateLoteByQuery);
 router.delete('/eliminar', loteController.deleteLoteByQuery);
+router.get('/lote-contrato/:id', loteController.obtenerLoteParaContrato);
 
 
 module.exports = router;

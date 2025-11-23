@@ -154,6 +154,33 @@ const Lote = {
     return rows[0];
   },
 
+  obtenerLoteParaContrato: async (id) => {
+    const query = `
+      SELECT 
+        l.id_propiedad,
+        l.numLote AS numlote,
+        l.manzana,
+        l.direccion,
+        l.estado_propiedad,
+        col.nombre_colonia,
+        ci.nombre_ciudad,
+        es.nombre_estado,
+        l.precio,
+        u.usuario AS propietario_nombre
+      FROM lote l
+      LEFT JOIN colonia col ON l.id_colonia = col.id_colonia
+      LEFT JOIN ciudad ci   ON col.id_ciudad = ci.id_ciudad
+      LEFT JOIN estado es   ON ci.id_estado = es.id_estado
+      LEFT JOIN users u     ON l.id_user = u.id_user
+      WHERE l.id_propiedad = $1
+      LIMIT 1;
+    `;
+
+    const { rows } = await pool.query(query, [id]);
+    return rows[0] || null;
+},
+
+
   create: async (data) => {
     const client = await pool.connect();
     try {

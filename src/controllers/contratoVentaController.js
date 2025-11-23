@@ -136,29 +136,13 @@ exports.createContrato = asyncHandler(async (req, res) => {
         [correo_cliente]
       );
 
-      if (existeCorreo.rowCount > 0) {
-        finalClienteId = existeCorreo.rows[0].id_cliente;
-      } else {
-        // crear cliente si vienen datos mínimos
-        if (!nombre || !apellido_paterno) {
-          await client.query('ROLLBACK');
-          return res.status(400).json({
-            message:
-              'No existe cliente y faltan datos para crearlo (nombre/apellido_paterno)',
-          });
-        }
-
-        const insertCli = await client.query(
-          `
-            INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING *
-          `,
-          [nombre, apellido_paterno, apellido_materno || null, correo_cliente, phoneNormalizer(telefono)]
-        );
-
-        finalClienteId = insertCli.rows[0].id_cliente;
-      }
+      if (existeCorreo.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        message: 'El cliente no existe. Debe registrarlo antes de crear un contrato.'
+      });
+    }
+          finalClienteId = existeCorreo.rows[0].id_cliente;
     } else {
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -212,22 +196,15 @@ exports.createContrato = asyncHandler(async (req, res) => {
       ['en proceso', id_lote]
     );
 
-    const propietarioRes = await client.query(`
-    SELECT u.usuario 
-    FROM lote l
-    INNER JOIN users u ON l.id_user = u.id_user
-    WHERE l.id_propiedad = $1
-    `, [id_lote]);
+  
 
-    const propietario_nombre = propietarioRes.rows[0]?.usuario || null;
 
     await client.query('COMMIT');
 
     // Responder con contrato y pagos creados
-    res.status(201).json({ contrato, mensualidad, pagos: pagosCreados, propietario_nombre });
+    res.status(201).json({ contrato, mensualidad, pagos: pagosCreados });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Error crear contrato:', err);
     res.status(500).json({
       message: 'Error al crear contrato',
       error: err.message,

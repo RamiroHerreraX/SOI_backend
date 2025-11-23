@@ -15,12 +15,33 @@ exports.getLoteById = asyncHandler(async (req,res)=>{
   res.json(lote);
 });
 
+exports.obtenerLoteParaContrato = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const lote = await Lote.obtenerLoteParaContrato(id);
+
+  if (!lote) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Lote no encontrado para contrato"
+    });
+  }
+
+  res.status(200).json({
+    status: "success",
+    lote
+  });
+});
+
+
 exports.createLote = asyncHandler(async (req, res) => {
     try {
         // 1. **CAMBIO CLAVE:** Usar Lote.validate en lugar de loteSchema.validate.
         // Lote.validate ya incluye el saneamiento ('' -> null).
         // También usamos 'value' para obtener los datos validados y limpios.
         const { error, value: validatedData } = Lote.validate(req.body); 
+        console.log("Body recibido:", req.body);
+
 
         if (error) {
             return res.status(400).json({
