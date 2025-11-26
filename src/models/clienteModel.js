@@ -1,6 +1,8 @@
 const pool = require('../db');
 const Joi = require('joi');
 
+// --------------- ESQUEMA COMPLETO DE VALIDACIÓN -----------------
+
 const clienteSchema = Joi.object({
   nombre: Joi.string().max(100).required().messages({
     'any.required': 'El nombre es obligatorio',
@@ -33,35 +35,44 @@ const clienteSchema = Joi.object({
     'string.max': 'La Clave de Elector no debe exceder los 20 caracteres'
   }),
   doc_identificacion: Joi.string().allow(null, '').messages({
-    'string.base': 'El documento de identificación debe ser una cadena de texto (ruta o URL)'
+    'string.base': 'El documento de identificación debe ser un PDF'
   }),
   doc_curp: Joi.string().allow(null, '').messages({
-    'string.base': 'El documento de CURP debe ser una cadena de texto (ruta o URL)'
+    'string.base': 'El documento de identificación debe ser un PDF'
   }),
 });
+
+// ------------------- OBJETO CLIENTE ----------------------
 
 const Cliente = {
   validate: (data) => clienteSchema.validate(data),
 
+  // Obtener todos
   getAll: async () => {
     const res = await pool.query('SELECT * FROM cliente ORDER BY id_cliente');
     return res.rows;
   },
 
-  getByCurp: async (id) => {
-    const res = await pool.query('SELECT * FROM cliente WHERE curp=$1', [id]);
+  // Obtener por CURP
+  getByCurp: async (curp) => {
+    const res = await pool.query('SELECT * FROM cliente WHERE curp=$1', [curp]);
     return res.rows[0];
   },
 
+  // Buscar por correo
   getByCorreo: async (correo) => {
     const res = await pool.query('SELECT * FROM cliente WHERE correo=$1', [correo]);
     return res.rows[0];
   },
 
+  // Crear cliente
   create: async (data) => {
-    const { nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp } = data;
+    const { 
+      nombre, apellido_paterno, apellido_materno, correo, telefono,
+      curp, clave_elector, doc_identificacion, doc_curp 
+    } = data;
 
-    // 🔍 Validaciones de unicidad antes de insertar
+    // Validaciones de unicidad
     const checks = [
       { field: 'correo', value: correo },
       { field: 'telefono', value: telefono },
@@ -79,26 +90,39 @@ const Cliente = {
       }
     }
 
+    // Insertar cliente
     const res = await pool.query(`
-      INSERT INTO cliente (nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO cliente 
+        (nombre, apellido_paterno, apellido_materno, correo, telefono, curp, clave_elector, doc_identificacion, doc_curp)
+      VALUES 
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING *
-    `, [nombre, apellido_paterno, apellido_materno || null, correo, telefono || null, curp, clave_elector, doc_identificacion || null, doc_curp || null]);
+    `, [
+      nombre,
+      apellido_paterno,
+      apellido_materno || null,
+      correo,
+      telefono || null,
+      curp,
+      clave_elector || null,
+      doc_identificacion || null,
+      doc_curp || null
+    ]);
 
     return res.rows[0];
   },
 
+  // Actualizar cliente
   update: async (curp, data) => {
-    // 🔍 Validaciones de unicidad antes de actualizar
     const existing = await pool.query('SELECT * FROM cliente WHERE curp=$1', [curp]);
     if (existing.rows.length === 0) {
       throw new Error(`No existe un cliente con CURP '${curp}'`);
     }
 
+    // Validaciones de unicidad
     const checks = [
       { field: 'correo', value: data.correo },
       { field: 'telefono', value: data.telefono },
-      { field: 'curp', value: data.curp },
       { field: 'clave_elector', value: data.clave_elector }
     ];
 
@@ -112,13 +136,13 @@ const Cliente = {
       }
     }
 
+    // Actualizar dinámicamente
     let fields = [], values = [], i = 1;
+
     for (const [key, value] of Object.entries(data)) {
       fields.push(`${key}=$${i++}`);
       values.push(value);
     }
-
-    if (fields.length === 0) throw new Error("No hay datos válidos para actualizar");
 
     const res = await pool.query(
       `UPDATE cliente SET ${fields.join(', ')} WHERE curp=$${i} RETURNING *`,
@@ -128,6 +152,7 @@ const Cliente = {
     return res.rows[0];
   },
 
+  // Eliminar cliente
   delete: async (curp) => {
     const res = await pool.query('DELETE FROM cliente WHERE curp=$1 RETURNING *', [curp]);
     return res.rows[0];

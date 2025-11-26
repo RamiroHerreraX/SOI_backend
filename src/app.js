@@ -33,6 +33,7 @@ const clientesRouter = require('./routes/clienteRoutes');
 const contratosRouter = require('./routes/contratoRoutes');
 const pagosRouter = require('./routes/pagosRoutes');
 const authRoutes = require('./routes/authRoutes');
+app.use('/pdfs', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/users', userRoutes);
 app.use('/api/lotes', loteRoutes);
