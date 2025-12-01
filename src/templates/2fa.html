@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Código de Verificación - INMOBILIARIA INDES</title>
+  <style>
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: linear-gradient(135deg, #faf8f0 0%, #f5f1e6 100%);
+      margin: 0;
+      padding: 30px;
+      color: #3d3525;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23d4af37' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    
+    .card {
+      background: #fff;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 40px 35px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(212, 175, 55, 0.1);
+      border: 1px solid #f0e6cc;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, #d4af37 0%, #f7ef8a 100%);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 35px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid #f0e6cc;
+      position: relative;
+    }
+    
+    .header:after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 2px;
+      background: #d4af37;
+    }
+    
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      color: #3d3525;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .gold-accent {
+      color: #d4af37;
+      display: inline-block;
+      position: relative;
+    }
+    
+    .gold-accent:after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    }
+    
+    .tagline {
+      font-size: 15px;
+      color: #8a7d66;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      font-style: italic;
+    }
+    
+    h1 {
+      font-size: 26px;
+      color: #3d3525;
+      text-align: center;
+      margin: 25px 0 20px 0;
+      font-weight: 600;
+      position: relative;
+      display: inline-block;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0 20px;
+    }
+    
+    h1:before, h1:after {
+      content: '✦';
+      color: #d4af37;
+      margin: 0 15px;
+      font-size: 20px;
+    }
+    
+    .message {
+      font-size: 16px;
+      color: #5a5240;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    
+    .code-container {
+      margin: 35px auto;
+      text-align: center;
+      position: relative;
+    }
+    
+    .code {
+      display: inline-block;
+      padding: 22px 35px;
+      background: linear-gradient(135deg, #d4af37 0%, #f7ef8a 100%);
+      color: #3d3525;
+      font-size: 34px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 10px;
+      letter-spacing: 8px;
+      box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+      margin-bottom: 15px;
+      border: 1px solid #f0e6cc;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .code:before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      right: 2px;
+      bottom: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      z-index: -1;
+    }
+    
+    .validity {
+      font-size: 16px;
+      color: #8a7d66;
+      text-align: center;
+      margin: 25px 0;
+      padding: 15px;
+      background-color: #fcf9f0;
+      border-radius: 8px;
+      border-left: 4px solid #d4af37;
+    }
+    
+    .validity b {
+      color: #b8941f;
+    }
+    
+    .security-note {
+      background: #fcf9f0;
+      border: 1px solid #f0e6cc;
+      padding: 20px;
+      margin: 30px 0;
+      font-size: 14px;
+      color: #5a5240;
+      border-radius: 8px;
+      position: relative;
+      padding-left: 50px;
+    }
+    
+    .security-note:before {
+      content: '🛡️';
+      position: absolute;
+      left: 15px;
+      top: 18px;
+      font-size: 18px;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 25px;
+      border-top: 1px solid #f0e6cc;
+      font-size: 13px;
+      text-align: center;
+      color: #8a7d66;
+      line-height: 1.6;
+    }
+    
+    .footer b {
+      color: #d4af37;
+    }
+    
+    .icon {
+      font-size: 40px;
+      margin: 10px auto 20px;
+      display: block;
+      text-align: center;
+      color: #d4af37;
+      filter: drop-shadow(0 2px 3px rgba(212, 175, 55, 0.3));
+    }
+    
+    .panel-link {
+      color: #d4af37;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: all 0.3s;
+    }
+    
+    .panel-link:hover {
+      border-bottom: 1px solid #d4af37;
+    }
+    
+    .gold-border {
+      display: inline-block;
+      padding: 2px 15px;
+      border: 1px solid #d4af37;
+      border-radius: 20px;
+      margin-top: 5px;
+      font-size: 12px;
+      color: #b8941f;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="header">
+      <div class="logo">INMOBILIARIA <span class="gold-accent">INDES</span></div>
+      <div class="tagline">Excelencia y Prestigio en Propiedades</div>
+    </div>
+    
+    <div class="icon">🔐</div>
+    
+    <h1>Código de Verificación</h1>
+    
+    <p class="message">
+      Para acceder a tu cuenta en el exclusivo Panel de Administración de INMOBILIARIA INDES,
+      utiliza el siguiente código de verificación:
+    </p>
+
+    <div class="code-container">
+      <div class="code">{{OTP}}</div>
+    </div>
+    
+    <p class="validity">
+      ⏳ Este código dorado es válido por <b>5 minutos</b> y es de un solo uso.
+    </p>
+    
+    <div class="security-note">
+      <b>Protección de Seguridad:</b> Este código es personal e intransferible. 
+      Si no has solicitado acceso a tu cuenta, por favor contacta inmediatamente con nuestro equipo de soporte.
+    </div>
+    
+    <div class="footer">
+      © 2025 <b>INMOBILIARIA INDES</b> — Panel de Administración Exclusivo<br>
+      <div class="gold-border">ACCESO PRIVILEGIADO</div><br>
+      <span style="font-size: 12px;">
+        Ingresa al sistema en: <a href="#" class="panel-link">admin.indespropiedades.com</a>
+      </span>
+    </div>
+  </div>
+
+</body>
+</html>
